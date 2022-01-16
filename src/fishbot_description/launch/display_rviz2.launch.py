@@ -1,3 +1,9 @@
+'''
+作者: 小鱼
+公众号: 鱼香ROS
+QQ交流群: 2642868461
+描述: file content
+'''
 
 import os
 from launch import LaunchDescription
@@ -34,8 +40,8 @@ def generate_launch_description():
         output='screen',
         )
 
-    ld.add_action(robot_state_publisher_node)
     ld.add_action(joint_state_publisher_node)
+    ld.add_action(robot_state_publisher_node)
     ld.add_action(rviz2_node)
 
     return ld
