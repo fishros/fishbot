@@ -44,7 +44,11 @@ def generate_launch_description():
 
     # Start Gazebo server
     start_gazebo_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')),
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py'),
+        ),
+        launch_arguments={'world': '/root/code/fishbot_ws/src/fishbot_description/world/fish.world'}.items()
+
     )
     # Launch the robot
     spawn_entity_cmd = Node(
