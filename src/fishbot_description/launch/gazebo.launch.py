@@ -47,7 +47,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py'),
         ),
-        launch_arguments={'world': '/root/code/fishbot_ws/src/fishbot_description/world/fish.world'}.items()
+        launch_arguments={'world': pkg_share+'/world/fish.world'}.items()
 
     )
     # Launch the robot

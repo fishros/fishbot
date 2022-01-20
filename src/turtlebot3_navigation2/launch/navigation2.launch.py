@@ -35,7 +35,7 @@ def generate_launch_description():
             'map',
             'fishbot_map.yaml'))
 
-    param_file_name = '/root/code/fishbot_ws/src/turtlebot3_navigation2/param/burger.yaml'
+    param_file_name = get_package_share_directory('turtlebot3_navigation2')+'/param/burger.yaml'
     param_dir = LaunchConfiguration(
         'params_file',
         default=os.path.join(

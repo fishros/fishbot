@@ -35,3 +35,12 @@ ros2 launch fishbot_description display_rviz2.launch.py
 
 
 
+```
+export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+```
+
+```
+export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+```
