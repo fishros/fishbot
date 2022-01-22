@@ -1,3 +1,9 @@
+'''
+作者: 小鱼
+公众号: 鱼香ROS
+QQ交流群: 2642868461
+描述: file content
+'''
 # Copyright 2019 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,19 +33,21 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    package_name = 'fishbot_navigation2'
+
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     map_dir = LaunchConfiguration(
         'map',
         default=os.path.join(
-            get_package_share_directory('turtlebot3_navigation2'),
+            get_package_share_directory(package_name),
             'map',
             'fishbot_map.yaml'))
 
-    param_file_name = get_package_share_directory('turtlebot3_navigation2')+'/param/burger.yaml'
+    param_file_name = get_package_share_directory(package_name)+'/param/fishbot.yaml'
     param_dir = LaunchConfiguration(
         'params_file',
         default=os.path.join(
-            get_package_share_directory('turtlebot3_navigation2'),
+            get_package_share_directory(package_name),
             'param',
             param_file_name))
 
