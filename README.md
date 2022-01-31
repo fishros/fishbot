@@ -4,17 +4,15 @@
  * @QQ交流群: 2642868461
  * @描述: README
 -->
-# fishbot
+# 基于ROS2实现的Fishbot机器人仿真及实体机器人
 
-## 安装依赖
-首先你需要一个安装好ROS2的环境，如果没有请访问fishros.com使用一键安装进行安装。
-接着打开终端运行下面的指令。
 
-```
-sudo apt install ros-$ROS_DISTRO-joint-state-publisher-gui ros-$ROS_DISTRO-joint-state-publisher
-```
+## 1.介绍
 
-## 下载编译
+
+## 2.安装运行
+
+### 2.1 下载编译
 
 
 ```
@@ -23,10 +21,9 @@ cd fishbot
 colcon build
 ```
 
+### 2.2 运行测试
 
-## 运行测试
-
-### 在RVIZ中显示机器人模型
+#### 在RVIZ中显示机器人模型
 
 ```
 source install/setup.bash
@@ -35,12 +32,7 @@ ros2 launch fishbot_description display_rviz2.launch.py
 
 
 
-```
-export TURTLEBOT3_MODEL=burger
-ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
-```
+## 作者
+- [鱼香ROS](https://fishros.com)-小鱼
 
-```
-export TURTLEBOT3_MODEL=burger
-ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
-```
+欢迎大家关注公众号鱼香ROS,加入技术交流群
