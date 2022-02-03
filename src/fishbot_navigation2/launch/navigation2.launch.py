@@ -41,7 +41,7 @@ def generate_launch_description():
         default=os.path.join(
             get_package_share_directory(package_name),
             'map',
-            'fishbot_map.yaml'))
+            'room.yaml'))
 
     param_file_name = get_package_share_directory(package_name)+'/param/fishbot.yaml'
     param_dir = LaunchConfiguration(

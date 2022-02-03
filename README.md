@@ -9,6 +9,11 @@
 
 ## 1.介绍
 
+- fishbot_description  fishbot的URDF定义 
+- fishbot_controller   fishbot与真实机器人通信节点
+- fishbot_cartographer fishbot使用cartographer建图配置
+- fishbot_navigation2  fishbot使用navigation2导航配置 
+- nav_core             nav2导航部分源码
 
 ## 2.安装运行
 

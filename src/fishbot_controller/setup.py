@@ -1,11 +1,12 @@
 from setuptools import setup
 
 package_name = 'fishbot_controller'
+submodules = [package_name+'/driver/base/',package_name+'/driver/laser/',package_name+'/tool/']
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=[package_name]+submodules,
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -20,6 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'controller=fishbot_controller.controller:main'
         ],
     },
 )
