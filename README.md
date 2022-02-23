@@ -18,6 +18,7 @@
 ```
 git clone https://github.com/fishros/fishbot.git
 cd fishbot
+rosdep install --from-paths src -y
 colcon build
 ```
 
