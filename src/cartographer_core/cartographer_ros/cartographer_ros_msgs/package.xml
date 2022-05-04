@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2016 The Cartographer Authors
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<package format="3">
+  <name>cartographer_ros_msgs</name>
+  <!-- See cartographer_ros/package.xml for details about the versioning scheme. -->
+  <!--
+  Log of versions:
+
+  1.0.9000 = googlecartographer/cartographer_ros@3cb7efd62c38125081b86844c5b2fee3147d0667 + ros2 port
+  -->
+  <version>1.0.9003</version>
+  <description>
+    ROS messages for the cartographer_ros package.
+  </description>
+  <maintainer email="clalancette@openrobotics.org">Chris Lalancette</maintainer>
+  <maintainer email="pyo@robotis.com">Pyo</maintainer>
+  <license>Apache 2.0</license>
+  <url>https://github.com/ros2/cartographer_ros</url>
+
+  <author email="google-cartographer@googlegroups.com">
+    The Cartographer Authors
+  </author>
+
+  <author email="thlim@robotis.com">Darby Lim</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

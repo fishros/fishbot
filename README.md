@@ -32,6 +32,10 @@ ros2 launch fishbot_description display_rviz2.launch.py
 ```
 
 
+```
+source install/setup.bash
+ros2 launch fishbot_description gazebo.launch.py
+```
 
 ## 作者
 - [鱼香ROS](https://fishros.com)-小鱼
