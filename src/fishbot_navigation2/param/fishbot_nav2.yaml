@@ -96,9 +96,9 @@ controller_server:
       min_vel_y: 0.0
       max_vel_x: 0.22
       max_vel_y: 0.0
-      max_vel_theta: 0.2
+      max_vel_theta: 0.8
       min_speed_xy: 0.0
-      max_speed_xy: 0.22
+      max_speed_xy: 0.44
       min_speed_theta: 0.0
       # Add high threshold velocity for turtlebot 3 issue.
       # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75

@@ -1,4 +1,4 @@
-image: fishbot_map.pgm
+image: fishbot_map.png
 mode: trinary
 resolution: 0.05
 origin: [-3.37, -2.88, 0]
