@@ -31,11 +31,18 @@ source install/setup.bash
 ros2 launch fishbot_description display_rviz2.launch.py
 ```
 
-
+#### 仿真
 ```
 source install/setup.bash
 ros2 launch fishbot_description gazebo.launch.py
 ```
+
+#### Nav2
+```
+source install/setup.bash
+ros2 launch fishbot_navigation2 navigation2.launch.py use_sim_time:=True
+```
+
 
 ## 作者
 - [鱼香ROS](https://fishros.com)-小鱼

@@ -35,7 +35,7 @@ if(BUILD_TESTING)
 endif()
 
 install(
-  DIRECTORY launch  config param map
+  DIRECTORY launch  config param maps
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -17,55 +17,27 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    package_name = 'fishbot_navigation2'
+    fishbot_navigation2_dir = get_package_share_directory('fishbot_navigation2')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
-    map_dir = LaunchConfiguration(
-        'map',
-        default=os.path.join(
-            get_package_share_directory(package_name),
-            'map',
-            'fishbot_map.yaml'))
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    map_yaml_path = LaunchConfiguration('map',default=os.path.join(fishbot_navigation2_dir,'maps','fishbot_map.yaml'))
+    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(fishbot_navigation2_dir,'param','fishbot.yaml'))
 
-    param_file_name = get_package_share_directory(package_name)+'/param/fishbot.yaml'
-    param_dir = LaunchConfiguration(
-        'params_file',
-        default=os.path.join(
-            get_package_share_directory(package_name),
-            'param',
-            param_file_name))
-
-    nav2_launch_file_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
-
-    rviz_config_dir = os.path.join(
-        get_package_share_directory('nav2_bringup'),
-        'rviz',
-        'nav2_default_view.rviz')
+    rviz_config_dir = os.path.join(nav2_bringup_dir,'rviz','nav2_default_view.rviz')
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'map',
-            default_value=map_dir,
-            description='Full path to map file to load'),
-
-        DeclareLaunchArgument(
-            'params_file',
-            default_value=param_dir,
-            description='Full path to param file to load'),
-
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='false',
-            description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('use_sim_time',default_value=use_sim_time,description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument('map',default_value=map_yaml_path,description='Full path to map file to load'),
+        DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
 
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([nav2_launch_file_dir, '/bringup_launch.py']),
+            PythonLaunchDescriptionSource([nav2_bringup_dir,'/launch','/bringup_launch.py']),
             launch_arguments={
-                'map': map_dir,
+                'map': map_yaml_path,
                 'use_sim_time': use_sim_time,
-                'params_file': param_dir}.items(),
+                'params_file': nav2_param_path}.items(),
         ),
-
         Node(
             package='rviz2',
             executable='rviz2',
