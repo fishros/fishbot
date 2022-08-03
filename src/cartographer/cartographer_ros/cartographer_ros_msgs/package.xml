@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2016 The Cartographer Authors
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<package format="3">
+  <name>cartographer_ros_msgs</name>
+  <!--
+  As of 2022-03-31, the versioning for cartographer_ros is in a complicated situation.
+  Upstream https://github.com/cartographer-project/cartographer_ros seems to be moribund,
+  with no commits for close to a year.  The master branch there is only for ROS 1, and
+  that branch has not had a released tag since 1.0.0 in 2018.
+
+  In the meantime, we've done a port to ROS 2 in https://github.com/ros2/cartographer_ros
+  that targets upstream cartographer 2.0.0.
+
+  Since we have no response from upstream in a long time, we are going to go ahead and
+  assume that the 1.x series of tags from upstream cartographer_ros will always be used
+  to target ROS 1.  Further we are going to assume that the 2.x series of tags
+  from upstream cartographer_ros (none of which exist yet) will be used to target ROS 2.
+  If upstream comes alive and chooses a different versioning scheme, we can adjust later
+  as necessary.  The outcome of all of this is that we are assuming a starting "upstream"
+  release of 2.0.0, which then plays into the rest of the explanation below.
+
+  We add 900 to the patch part of the version and then multiply it by 10,
+  i.e. our version = `(upstream_patch_version + 900) * 10`,
+  so we can have intermediate releases as well as release any future official 2.0.x versions.
+
+  This is basically packing the patch part of the version and a fourth version part together
+  into the third part of the version.
+
+  The use of `900` instead of something else like `100` is arbitrary, but it might
+  help people recognize that this is a "special" version number.
+  It is needed however, because we cannot have a leading `0` in our patch version.
+
+  Consider these possible future versions as an example:
+
+  2.0.9000 -> current state of this repository, 2.0.0 + some commits from us
+  2.0.9010 -> upstream 2.0.1
+  2.0.9011 -> upstream 2.0.1 + additional commits from upstream or us
+  2.0.9012 -> upstream 2.0.1 + additional commits from 2.0.1011 + more new commits
+  2.0.9020 -> upstream 2.0.2
+  and so on...
+  -->
+  <version>2.0.9000</version>
+  <description>
+    ROS messages for the cartographer_ros package.
+  </description>
+  <maintainer email="clalancette@openrobotics.org">Chris Lalancette</maintainer>
+  <license>Apache 2.0</license>
+
+  <url>https://github.com/cartographer-project/cartographer_ros</url>
+
+  <author email="google-cartographer@googlegroups.com">
+    The Cartographer Authors
+  </author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <depend>builtin_interfaces</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

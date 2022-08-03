@@ -1,0 +1,459 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /RobotModel1/Description Topic1
+        - /TF1/Tree1
+        - /map1/Topic1
+        - /SubmapsDisplay1/Submaps1
+        - /Trajectories1/Namespaces1
+        - /Constraints1/Namespaces1
+      Splitter Ratio: 0.42203986644744873
+    Tree Height: 1174
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Expanded:
+      - /2D Goal Pose1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: teleop_panel/Teleop
+    Name: Teleop
+    Topic: /rt_cmd_vel
+  - Class: wyca_rviz_plugin/Wyca
+    Name: Wyca
+  - Class: rviz_common/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+      Marker Scale: 0.30000001192092896
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: map
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_updates
+      Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 239; 41; 41
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.10000000149011612
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /scan_matched_points2
+      Use Fixed Frame: true
+      Use rainbow: false
+      Value: true
+    - Class: cartographer_rviz/SubmapsDisplay
+      Enabled: true
+      Fade-out distance: 1
+      High Resolution: true
+      Low Resolution: false
+      Name: SubmapsDisplay
+      Submap query service: /submap_query
+      Submaps:
+        All: true
+        All Submap Pose Markers: true
+        Trajectory 0:
+          0.60: true
+          1.60: true
+          10.60: true
+          100.60: true
+          101.60: true
+          102.60: true
+          103.60: true
+          104.60: true
+          105.60: true
+          106.60: true
+          107.60: true
+          108.60: true
+          109.60: true
+          11.60: true
+          110.60: true
+          111.60: true
+          112.60: true
+          113.60: true
+          114.60: true
+          115.60: true
+          116.60: true
+          117.60: true
+          118.60: true
+          119.60: true
+          12.60: true
+          120.60: true
+          121.60: true
+          122.60: true
+          123.60: true
+          124.60: true
+          125.60: true
+          126.60: true
+          127.60: true
+          128.60: true
+          129.60: true
+          13.60: true
+          130.60: true
+          131.60: true
+          132.60: true
+          133.60: true
+          134.60: true
+          135.60: true
+          136.60: true
+          137.60: true
+          138.60: true
+          139.60: true
+          14.60: true
+          140.60: true
+          141.60: true
+          142.60: true
+          143.60: true
+          144.60: true
+          145.60: true
+          146.60: true
+          147.60: true
+          148.60: true
+          149.60: true
+          15.60: true
+          150.60: true
+          151.60: true
+          152.60: true
+          153.60: true
+          154.60: true
+          155.60: true
+          156.60: true
+          157.60: true
+          158.60: true
+          159.60: true
+          16.60: true
+          160.60: true
+          161.60: true
+          162.60: true
+          163.60: true
+          164.60: true
+          165.60: true
+          166.60: true
+          167.60: true
+          168.60: true
+          169.60: true
+          17.60: true
+          170.60: true
+          171.60: true
+          172.43: true
+          173.13: true
+          18.60: true
+          19.60: true
+          2.60: true
+          20.60: true
+          21.60: true
+          22.60: true
+          23.60: true
+          24.60: true
+          25.60: true
+          26.60: true
+          27.60: true
+          28.60: true
+          29.60: true
+          3.60: true
+          30.60: true
+          31.60: true
+          32.60: true
+          33.60: true
+          34.60: true
+          35.60: true
+          36.60: true
+          37.60: true
+          38.60: true
+          39.60: true
+          4.60: true
+          40.60: true
+          41.60: true
+          42.60: true
+          43.60: true
+          44.60: true
+          45.60: true
+          46.60: true
+          47.60: true
+          48.60: true
+          49.60: true
+          5.60: true
+          50.60: true
+          51.60: true
+          52.60: true
+          53.60: true
+          54.60: true
+          55.60: true
+          56.60: true
+          57.60: true
+          58.60: true
+          59.60: true
+          6.60: true
+          60.60: true
+          61.60: true
+          62.60: true
+          63.60: true
+          64.60: true
+          65.60: true
+          66.60: true
+          67.60: true
+          68.60: true
+          69.60: true
+          7.60: true
+          70.60: true
+          71.60: true
+          72.60: true
+          73.60: true
+          74.60: true
+          75.60: true
+          76.60: true
+          77.60: true
+          78.60: true
+          79.60: true
+          8.60: true
+          80.60: true
+          81.60: true
+          82.60: true
+          83.60: true
+          84.60: true
+          85.60: true
+          86.60: true
+          87.60: true
+          88.60: true
+          89.60: true
+          9.60: true
+          90.60: true
+          91.60: true
+          92.60: true
+          93.60: true
+          94.60: true
+          95.60: true
+          96.60: true
+          97.60: true
+          98.60: true
+          99.60: true
+          Submap Pose Markers: true
+          Value: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /submap_list
+      Tracking frame: map
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
+      Name: Trajectories
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /trajectory_node_list
+      Value: false
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Constraints
+      Namespaces:
+        Inter constraints, different trajectories: true
+        Inter constraints, same trajectory: true
+        Inter residuals, different trajectories: true
+        Inter residuals, same trajectory: true
+        Intra constraints: true
+        Intra residuals: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /constraint_list
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Landmarks
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /landmark_poses_list
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
+    - Class: rviz_default_plugins/SetInitialPose
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+    - Class: rviz_default_plugins/PublishPoint
+      Single click: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+    - Class: nav2_rviz_plugins/GoalTool
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/ThirdPersonFollower
+      Distance: 204.58663940429688
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: -11.516843795776367
+        Y: 13.40983772277832
+        Z: 7.403941708616912e-05
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 1.5697963237762451
+      Target Frame: map
+      Value: ThirdPersonFollower (rviz_default_plugins)
+      Yaw: 1.6953976154327393
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1403
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000028100000521fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000521000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb00000018004e0061007600690067006100740069006f006e002000320000000324000000b70000000000000000fb0000000c00540065006c0065006f007000000002af00000164000000bb00fffffffb00000008005700790063006100000003a5000001000000006000fffffffb0000000800540069006d00650000000484000000bf0000003900ffffff000000010000010f00000521fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d00000521000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000001fb0000000800540069006d00650100000000000004500000000000000000000006640000052100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Teleop:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 2560
+  Wyca:
+    collapsed: false
+  X: 3840
+  Y: 0

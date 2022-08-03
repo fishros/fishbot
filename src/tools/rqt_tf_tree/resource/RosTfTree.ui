@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RosTfTreeWidget</class>
+ <widget class="QWidget" name="RosTfTreeWidget">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1144</width>
+    <height>307</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TF Tree</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+     <item>
+      <widget class="QPushButton" name="clear_buffer_push_button">
+       <property name="toolTip">
+        <string>Clear TF Buffer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="refresh_graph_push_button">
+       <property name="toolTip">
+        <string>Refresh TF Tree</string>
+       </property>
+      </widget>
+     </item>
+     <!-- <item> -->
+     <!--  <widget class="QLineEdit" name="filter_line_edit"> -->
+     <!--   <property name="toolTip"> -->
+     <!--    <string>Comma separated regex patterns / names, leading dash creates exclusion pattern. Example: gazebo, -test.*</string> -->
+     <!--   </property> -->
+     <!--   <property name="text"> -->
+     <!--    <string notr="true"/> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     
+
+     <!-- <item> -->
+     <!--  <widget class="QComboBox" name="directions_combo_box"> -->
+     <!--   <property name="sizePolicy"> -->
+     <!--    <sizepolicy hsizetype="Minimum" vsizetype="Fixed"> -->
+     <!--     <horstretch>0</horstretch> -->
+     <!--     <verstretch>0</verstretch> -->
+     <!--    </sizepolicy> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     <!-- <item> -->
+     <!--  <widget class="QCheckBox" name="mark_check_box"> -->
+     <!--   <property name="toolTip"> -->
+     <!--    <string>Mark Selected</string> -->
+     <!--   </property> -->
+     <!--   <property name="text"> -->
+     <!--    <string>Mark</string> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     <!-- <item> -->
+     <!--  <widget class="QCheckBox" name="with_stacks_check_box"> -->
+     <!--   <property name="toolTip"> -->
+     <!--    <string>Show stacks</string> -->
+     <!--   </property> -->
+     <!--   <property name="text"> -->
+     <!--    <string>Show Stacks</string> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     <!-- <item> -->
+     <!--  <widget class="QCheckBox" name="transitives_check_box"> -->
+     <!--   <property name="toolTip"> -->
+     <!--    <string>Do not show transitive / duplicate dependencies</string> -->
+     <!--   </property> -->
+     <!--   <property name="text"> -->
+     <!--    <string>No Transitive deps</string> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     <!-- <item> -->
+     <!--  <widget class="Line" name="line"> -->
+     <!--   <property name="orientation"> -->
+     <!--    <enum>Qt::Vertical</enum> -->
+     <!--   </property> -->
+     <!--  </widget> -->
+     <!-- </item> -->
+     <item>
+      <widget class="QCheckBox" name="highlight_connections_check_box">
+       <property name="toolTip">
+        <string>Highlight incoming and outgoing connections on mouse over</string>
+       </property>
+       <property name="text">
+        <string>Highlight</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="auto_fit_graph_check_box">
+       <property name="toolTip">
+        <string>Automatically fit graph into view on update</string>
+       </property>
+       <property name="text">
+        <string>Fit</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="fit_in_view_push_button">
+       <property name="toolTip">
+        <string>Fit graph in view</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="load_dot_push_button">
+       <property name="toolTip">
+        <string>Load DOT graph from file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_dot_push_button">
+       <property name="toolTip">
+        <string>Save as DOT graph</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_as_svg_push_button">
+       <property name="toolTip">
+        <string>Save as SVG</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_as_image_push_button">
+       <property name="toolTip">
+        <string>Save as image</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="InteractiveGraphicsView" name="graphics_view">
+     <property name="renderHints">
+      <set>QPainter::Antialiasing|QPainter::HighQualityAntialiasing|QPainter::SmoothPixmapTransform|QPainter::TextAntialiasing</set>
+     </property>
+     <property name="resizeAnchor">
+      <enum>QGraphicsView::AnchorViewCenter</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>InteractiveGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>rqt_graph.interactive_graphics_view</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

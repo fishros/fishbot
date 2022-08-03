@@ -48,9 +48,6 @@ add_library(dwb_core SHARED
   src/trajectory_utils.cpp
 )
 
-# prevent pluginlib from using boost
-target_compile_definitions(dwb_core PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
 ament_target_dependencies(dwb_core
   ${dependencies}
 )
@@ -78,7 +75,6 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(dwb_core)
 ament_export_dependencies(${dependencies})
-ament_export_definitions("PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 pluginlib_export_plugin_description_file(nav2_core local_planner_plugin.xml)
 

@@ -12,7 +12,7 @@ def generate_launch_description():
     
     #=====================运行节点需要的配置=======================================================================
     # 是否使用仿真时间，我们用gazebo，这里设置成true
-    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     # 地图的分辨率
     resolution = LaunchConfiguration('resolution', default='0.05')
     # 地图的发布周期
@@ -33,10 +33,10 @@ def generate_launch_description():
         arguments=['-configuration_directory', configuration_directory,
                    '-configuration_basename', configuration_basename])
 
-    occupancy_grid_node = Node(
+    cartographer_occupancy_grid_node = Node(
         package='cartographer_ros',
-        executable='occupancy_grid_node',
-        name='occupancy_grid_node',
+        executable='cartographer_occupancy_grid_node',
+        name='cartographer_occupancy_grid_node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
         arguments=['-resolution', resolution, '-publish_period_sec', publish_period_sec])
@@ -52,7 +52,7 @@ def generate_launch_description():
     #===============================================定义启动文件========================================================
     ld = LaunchDescription()
     ld.add_action(cartographer_node)
-    ld.add_action(occupancy_grid_node)
+    ld.add_action(cartographer_occupancy_grid_node)
     ld.add_action(rviz_node)
 
     return ld

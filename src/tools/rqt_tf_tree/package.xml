@@ -1,0 +1,33 @@
+<package format="3">
+  <name>rqt_tf_tree</name>
+  <version>1.0.3</version>
+  <description>rqt_tf_tree provides a GUI plugin for visualizing the ROS TF frame tree.</description>
+  <author>Thibault Kruse</author>
+  <maintainer email="gm130s@gmail.com">Isaac I.Y. Saito</maintainer>
+  <maintainer email="peter9606@gmail.com">Peter Han</maintainer>
+  <maintainer email="mabel@openrobotics.org">Mabel Zhang</maintainer>
+  <maintainer email="arne.hitzmann@gmail.com">Arne Hitzmann</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://wiki.ros.org/rqt_tf_tree</url>
+  <url type="repository">https://github.com/ros-visualization/rqt_tf_tree</url>
+  <url type="bugtracker">https://github.com/ros-visualization/rqt_tf_tree/issues</url>
+
+  <exec_depend version_gte="0.2.19">python_qt_binding</exec_depend>
+  <exec_depend>qt_dotgraph</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rqt_graph</exec_depend>
+  <exec_depend>rqt_gui</exec_depend>
+  <exec_depend>rqt_gui_py</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <test_depend condition="$ROS_PYTHON_VERSION == 2">python-mock</test_depend>
+  <test_depend condition="$ROS_PYTHON_VERSION == 3">python3-mock</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>
