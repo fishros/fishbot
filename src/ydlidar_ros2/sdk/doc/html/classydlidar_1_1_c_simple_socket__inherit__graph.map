@@ -1,0 +1,5 @@
+<map id="ydlidar::CSimpleSocket" name="ydlidar::CSimpleSocket">
+<area shape="rect" id="node3" href="$classydlidar_1_1_c_active_socket.html" title="ydlidar::CActiveSocket" alt="" coords="5,155,161,181"/>
+<area shape="rect" id="node4" href="$classydlidar_1_1_c_passive_socket.html" title="ydlidar::CPassiveSocket" alt="" coords="185,155,352,181"/>
+<area shape="rect" id="node2" href="$class_channel_device.html" title="ChannelDevice" alt="" coords="120,5,231,32"/>
+</map>

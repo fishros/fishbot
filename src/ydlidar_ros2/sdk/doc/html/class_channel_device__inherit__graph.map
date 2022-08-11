@@ -1,0 +1,6 @@
+<map id="ChannelDevice" name="ChannelDevice">
+<area shape="rect" id="node2" href="$classserial_1_1_serial.html" title="serial::Serial" alt="" coords="5,80,100,107"/>
+<area shape="rect" id="node3" href="$classydlidar_1_1_c_simple_socket.html" title="ydlidar::CSimpleSocket" alt="" coords="124,80,283,107"/>
+<area shape="rect" id="node4" href="$classydlidar_1_1_c_active_socket.html" title="ydlidar::CActiveSocket" alt="" coords="32,155,188,181"/>
+<area shape="rect" id="node5" href="$classydlidar_1_1_c_passive_socket.html" title="ydlidar::CPassiveSocket" alt="" coords="212,155,379,181"/>
+</map>
