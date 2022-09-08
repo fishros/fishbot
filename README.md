@@ -4,6 +4,10 @@
  * @QQ交流群: 2642868461
  * @描述: README
 -->
+
+
+## 注意当前分支代码为foxy版本，如需humble版本请在左上角切换分支
+
 # 基于ROS2实现的Fishbot机器人仿真及实体机器人
 
 ![微信图片_20220908133932](doc/imgs/微信图片_20220908133932.png)
@@ -18,7 +22,7 @@
 
 
 ```
-git clone https://github.com/fishros/fishbot.git
+git clone https://github.com/fishros/fishbot.git -b foxy
 cd fishbot
 rosdep install --from-paths src -y
 colcon build
