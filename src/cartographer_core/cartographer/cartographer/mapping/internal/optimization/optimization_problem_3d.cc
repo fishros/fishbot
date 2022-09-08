@@ -26,8 +26,8 @@
 #include <vector>
 
 #include "Eigen/Core"
-#include "cartographer/common/ceres_solver_options.h"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
+#include "cartographer/common/internal/ceres_solver_options.h"
 #include "cartographer/common/math.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/internal/3d/imu_integration.h"
@@ -63,12 +63,12 @@ std::unique_ptr<transform::Rigid3d> Interpolate(
   }
   if (it == map_by_time.BeginOfTrajectory(trajectory_id)) {
     if (it->time == time) {
-      return common::make_unique<transform::Rigid3d>(it->pose);
+      return absl::make_unique<transform::Rigid3d>(it->pose);
     }
     return nullptr;
   }
   const auto prev_it = std::prev(it);
-  return common::make_unique<transform::Rigid3d>(
+  return absl::make_unique<transform::Rigid3d>(
       Interpolate(transform::TimestampedTransform{prev_it->time, prev_it->pose},
                   transform::TimestampedTransform{it->time, it->pose}, time)
           .transform);
@@ -85,13 +85,13 @@ std::unique_ptr<transform::Rigid3d> Interpolate(
   }
   if (it == map_by_time.BeginOfTrajectory(trajectory_id)) {
     if (it->time == time) {
-      return common::make_unique<transform::Rigid3d>(it->pose.value());
+      return absl::make_unique<transform::Rigid3d>(it->pose.value());
     }
     return nullptr;
   }
   const auto prev_it = std::prev(it);
   if (prev_it->pose.has_value()) {
-    return common::make_unique<transform::Rigid3d>(
+    return absl::make_unique<transform::Rigid3d>(
         Interpolate(transform::TimestampedTransform{prev_it->time,
                                                     prev_it->pose.value()},
                     transform::TimestampedTransform{it->time, it->pose.value()},
@@ -123,15 +123,12 @@ transform::Rigid3d GetInitialLandmarkPose(
 
 void AddLandmarkCostFunctions(
     const std::map<std::string, LandmarkNode>& landmark_nodes,
-    bool freeze_landmarks, const MapById<NodeId, NodeSpec3D>& node_data,
+    const MapById<NodeId, NodeSpec3D>& node_data,
     MapById<NodeId, CeresPose>* C_nodes,
-    std::map<std::string, CeresPose>* C_landmarks, ceres::Problem* problem) {
+    std::map<std::string, CeresPose>* C_landmarks, ceres::Problem* problem,
+    double huber_scale) {
   for (const auto& landmark_node : landmark_nodes) {
     // Do not use landmarks that were not optimized for localization.
-    if (!landmark_node.second.global_landmark_pose.has_value() &&
-        freeze_landmarks) {
-      continue;
-    }
     for (const auto& observation : landmark_node.second.landmark_observations) {
       const std::string& landmark_id = landmark_node.first;
       const auto& begin_of_trajectory =
@@ -164,9 +161,10 @@ void AddLandmarkCostFunctions(
         C_landmarks->emplace(
             landmark_id,
             CeresPose(starting_point, nullptr /* translation_parametrization */,
-                      common::make_unique<ceres::QuaternionParameterization>(),
+                      absl::make_unique<ceres::QuaternionParameterization>(),
                       problem));
-        if (freeze_landmarks) {
+        // Set landmark constant if it is frozen.
+        if (landmark_node.second.frozen) {
           problem->SetParameterBlockConstant(
               C_landmarks->at(landmark_id).translation());
           problem->SetParameterBlockConstant(
@@ -176,7 +174,7 @@ void AddLandmarkCostFunctions(
       problem->AddResidualBlock(
           LandmarkCostFunction3D::CreateAutoDiffCostFunction(
               observation, prev->data, next->data),
-          nullptr /* loss function */, prev_node_pose->rotation(),
+          new ceres::HuberLoss(huber_scale), prev_node_pose->rotation(),
           prev_node_pose->translation(), next_node_pose->rotation(),
           next_node_pose->translation(),
           C_landmarks->at(landmark_id).rotation(),
@@ -258,11 +256,19 @@ void OptimizationProblem3D::SetMaxNumIterations(
 
 void OptimizationProblem3D::Solve(
     const std::vector<Constraint>& constraints,
-    const std::set<int>& frozen_trajectories,
+    const std::map<int, PoseGraphInterface::TrajectoryState>&
+        trajectories_state,
     const std::map<std::string, LandmarkNode>& landmark_nodes) {
   if (node_data_.empty()) {
     // Nothing to optimize.
     return;
+  }
+
+  std::set<int> frozen_trajectories;
+  for (const auto& it : trajectories_state) {
+    if (it.second == PoseGraphInterface::TrajectoryState::FROZEN) {
+      frozen_trajectories.insert(it.first);
+    }
   }
 
   ceres::Problem::Options problem_options;
@@ -271,7 +277,7 @@ void OptimizationProblem3D::Solve(
   const auto translation_parameterization =
       [this]() -> std::unique_ptr<ceres::LocalParameterization> {
     return options_.fix_z_in_3d()
-               ? common::make_unique<ceres::SubsetParameterization>(
+               ? absl::make_unique<ceres::SubsetParameterization>(
                      3, std::vector<int>{2})
                : nullptr;
   };
@@ -282,7 +288,6 @@ void OptimizationProblem3D::Solve(
   MapById<NodeId, CeresPose> C_nodes;
   std::map<std::string, CeresPose> C_landmarks;
   bool first_submap = true;
-  bool freeze_landmarks = !frozen_trajectories.empty();
   for (const auto& submap_id_data : submap_data_) {
     const bool frozen =
         frozen_trajectories.count(submap_id_data.id.trajectory_id) != 0;
@@ -294,7 +299,7 @@ void OptimizationProblem3D::Solve(
           submap_id_data.id,
           CeresPose(submap_id_data.data.global_pose,
                     translation_parameterization(),
-                    common::make_unique<ceres::AutoDiffLocalParameterization<
+                    absl::make_unique<ceres::AutoDiffLocalParameterization<
                         ConstantYawQuaternionPlus, 4, 2>>(),
                     &problem));
       problem.SetParameterBlockConstant(
@@ -304,7 +309,7 @@ void OptimizationProblem3D::Solve(
           submap_id_data.id,
           CeresPose(submap_id_data.data.global_pose,
                     translation_parameterization(),
-                    common::make_unique<ceres::QuaternionParameterization>(),
+                    absl::make_unique<ceres::QuaternionParameterization>(),
                     &problem));
     }
     if (frozen) {
@@ -320,7 +325,7 @@ void OptimizationProblem3D::Solve(
     C_nodes.Insert(
         node_id_data.id,
         CeresPose(node_id_data.data.global_pose, translation_parameterization(),
-                  common::make_unique<ceres::QuaternionParameterization>(),
+                  absl::make_unique<ceres::QuaternionParameterization>(),
                   &problem));
     if (frozen) {
       problem.SetParameterBlockConstant(C_nodes.at(node_id_data.id).rotation());
@@ -332,7 +337,7 @@ void OptimizationProblem3D::Solve(
   for (const Constraint& constraint : constraints) {
     problem.AddResidualBlock(
         SpaCostFunction3D::CreateAutoDiffCostFunction(constraint.pose),
-        // Only loop closure constraints should have a loss function.
+        // Loop closure constraints should have a loss function.
         constraint.tag == Constraint::INTER_SUBMAP
             ? new ceres::HuberLoss(options_.huber_scale())
             : nullptr /* loss function */,
@@ -342,8 +347,8 @@ void OptimizationProblem3D::Solve(
         C_nodes.at(constraint.node_id).translation());
   }
   // Add cost functions for landmarks.
-  AddLandmarkCostFunctions(landmark_nodes, freeze_landmarks, node_data_,
-                           &C_nodes, &C_landmarks, &problem);
+  AddLandmarkCostFunctions(landmark_nodes, node_data_, &C_nodes, &C_landmarks,
+                           &problem, options_.huber_scale());
   // Add constraints based on IMU observations of angular velocities and
   // linear acceleration.
   if (!options_.fix_z_in_3d()) {
@@ -359,6 +364,10 @@ void OptimizationProblem3D::Solve(
 
       problem.AddParameterBlock(trajectory_data.imu_calibration.data(), 4,
                                 new ceres::QuaternionParameterization());
+      if (!options_.use_online_imu_extrinsics_in_3d()) {
+        problem.SetParameterBlockConstant(
+            trajectory_data.imu_calibration.data());
+      }
       CHECK(imu_data_.HasTrajectory(trajectory_id));
       const auto imu_data = imu_data_.trajectory(trajectory_id);
       CHECK(imu_data.begin() != imu_data.end());
@@ -386,14 +395,14 @@ void OptimizationProblem3D::Solve(
         const IntegrateImuResult<double> result = IntegrateImu(
             imu_data, first_node_data.time, second_node_data.time, &imu_it);
         const auto next_node_it = std::next(node_it);
+        const common::Time first_time = first_node_data.time;
+        const common::Time second_time = second_node_data.time;
+        const common::Duration first_duration = second_time - first_time;
         if (next_node_it != trajectory_end &&
             next_node_it->id.node_index == second_node_id.node_index + 1) {
           const NodeId third_node_id = next_node_it->id;
           const NodeSpec3D& third_node_data = next_node_it->data;
-          const common::Time first_time = first_node_data.time;
-          const common::Time second_time = second_node_data.time;
           const common::Time third_time = third_node_data.time;
-          const common::Duration first_duration = second_time - first_time;
           const common::Duration second_duration = third_time - second_time;
           const common::Time first_center = first_time + first_duration / 2;
           const common::Time second_center = second_time + second_duration / 2;
@@ -412,8 +421,9 @@ void OptimizationProblem3D::Solve(
               result_center_to_center.delta_velocity;
           problem.AddResidualBlock(
               AccelerationCostFunction3D::CreateAutoDiffCostFunction(
-                  options_.acceleration_weight(), delta_velocity,
-                  common::ToSeconds(first_duration),
+                  options_.acceleration_weight() /
+                      common::ToSeconds(first_duration + second_duration),
+                  delta_velocity, common::ToSeconds(first_duration),
                   common::ToSeconds(second_duration)),
               nullptr /* loss function */,
               C_nodes.at(second_node_id).rotation(),
@@ -425,11 +435,15 @@ void OptimizationProblem3D::Solve(
         }
         problem.AddResidualBlock(
             RotationCostFunction3D::CreateAutoDiffCostFunction(
-                options_.rotation_weight(), result.delta_rotation),
+                options_.rotation_weight() / common::ToSeconds(first_duration),
+                result.delta_rotation),
             nullptr /* loss function */, C_nodes.at(first_node_id).rotation(),
             C_nodes.at(second_node_id).rotation(),
             trajectory_data.imu_calibration.data());
       }
+
+      // Force gravity constant to be positive.
+      problem.SetParameterLowerBound(&trajectory_data.gravity_constant, 0, 0.0);
     }
   }
 
@@ -531,7 +545,7 @@ void OptimizationProblem3D::Solve(
                         transform::GetYaw(fixed_frame_pose_in_map.rotation()),
                         Eigen::Vector3d::UnitZ())),
                 nullptr,
-                common::make_unique<ceres::AutoDiffLocalParameterization<
+                absl::make_unique<ceres::AutoDiffLocalParameterization<
                     YawOnlyQuaternionPlus, 4, 1>>(),
                 &problem));
         fixed_frame_pose_initialized = true;
@@ -539,7 +553,10 @@ void OptimizationProblem3D::Solve(
 
       problem.AddResidualBlock(
           SpaCostFunction3D::CreateAutoDiffCostFunction(constraint_pose),
-          nullptr /* loss function */,
+          options_.fixed_frame_pose_use_tolerant_loss() ?
+              new ceres::TolerantLoss(
+            options_.fixed_frame_pose_tolerant_loss_param_a(),
+            options_.fixed_frame_pose_tolerant_loss_param_b()) : nullptr,
           C_fixed_frames.at(trajectory_id).rotation(),
           C_fixed_frames.at(trajectory_id).translation(),
           C_nodes.at(node_id).rotation(), C_nodes.at(node_id).translation());
@@ -561,7 +578,8 @@ void OptimizationProblem3D::Solve(
       LOG(INFO) << "Gravity was: " << trajectory_data.gravity_constant;
       const auto& imu_calibration = trajectory_data.imu_calibration;
       LOG(INFO) << "IMU correction was: "
-                << common::RadToDeg(2. * std::acos(imu_calibration[0]))
+                << common::RadToDeg(2. *
+                                    std::acos(std::abs(imu_calibration[0])))
                 << " deg (" << imu_calibration[0] << ", " << imu_calibration[1]
                 << ", " << imu_calibration[2] << ", " << imu_calibration[3]
                 << ")";
@@ -598,7 +616,7 @@ OptimizationProblem3D::CalculateOdometryBetweenNodes(
     if (first_node_odometry != nullptr && second_node_odometry != nullptr) {
       const transform::Rigid3d relative_odometry =
           first_node_odometry->inverse() * (*second_node_odometry);
-      return common::make_unique<transform::Rigid3d>(relative_odometry);
+      return absl::make_unique<transform::Rigid3d>(relative_odometry);
     }
   }
   return nullptr;

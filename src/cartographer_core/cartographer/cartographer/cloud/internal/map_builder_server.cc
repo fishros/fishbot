@@ -23,6 +23,7 @@
 #include "cartographer/cloud/internal/handlers/add_rangefinder_data_handler.h"
 #include "cartographer/cloud/internal/handlers/add_sensor_data_batch_handler.h"
 #include "cartographer/cloud/internal/handlers/add_trajectory_handler.h"
+#include "cartographer/cloud/internal/handlers/delete_trajectory_handler.h"
 #include "cartographer/cloud/internal/handlers/finish_trajectory_handler.h"
 #include "cartographer/cloud/internal/handlers/get_all_submap_poses.h"
 #include "cartographer/cloud/internal/handlers/get_constraints_handler.h"
@@ -30,14 +31,17 @@
 #include "cartographer/cloud/internal/handlers/get_local_to_global_transform_handler.h"
 #include "cartographer/cloud/internal/handlers/get_submap_handler.h"
 #include "cartographer/cloud/internal/handlers/get_trajectory_node_poses_handler.h"
+#include "cartographer/cloud/internal/handlers/get_trajectory_states_handler.h"
 #include "cartographer/cloud/internal/handlers/is_trajectory_finished_handler.h"
 #include "cartographer/cloud/internal/handlers/is_trajectory_frozen_handler.h"
+#include "cartographer/cloud/internal/handlers/load_state_from_file_handler.h"
 #include "cartographer/cloud/internal/handlers/load_state_handler.h"
 #include "cartographer/cloud/internal/handlers/receive_global_slam_optimizations_handler.h"
 #include "cartographer/cloud/internal/handlers/receive_local_slam_results_handler.h"
 #include "cartographer/cloud/internal/handlers/run_final_optimization_handler.h"
 #include "cartographer/cloud/internal/handlers/set_landmark_pose_handler.h"
 #include "cartographer/cloud/internal/handlers/write_state_handler.h"
+#include "cartographer/cloud/internal/handlers/write_state_to_file_handler.h"
 #include "cartographer/cloud/internal/sensor/serialization.h"
 #include "glog/logging.h"
 
@@ -46,6 +50,7 @@ namespace cloud {
 namespace {
 
 static auto* kIncomingDataQueueMetric = metrics::Gauge::Null();
+constexpr int kMaxMessageSize = 100 * 1024 * 1024;  // 100 MB
 const common::Duration kPopTimeout = common::FromMilliseconds(100);
 
 }  // namespace
@@ -60,11 +65,14 @@ MapBuilderServer::MapBuilderServer(
       map_builder_server_options.num_grpc_threads());
   server_builder.SetNumEventThreads(
       map_builder_server_options.num_event_threads());
+  server_builder.SetMaxSendMessageSize(kMaxMessageSize);
+  server_builder.SetMaxReceiveMessageSize(kMaxMessageSize);
   if (!map_builder_server_options.uplink_server_address().empty()) {
     local_trajectory_uploader_ = CreateLocalTrajectoryUploader(
         map_builder_server_options.uplink_server_address(),
         map_builder_server_options.upload_batch_size(),
-        map_builder_server_options.enable_ssl_encryption());
+        map_builder_server_options.enable_ssl_encryption(),
+        map_builder_server_options.enable_google_auth());
   }
   server_builder.RegisterHandler<handlers::AddTrajectoryHandler>();
   server_builder.RegisterHandler<handlers::AddOdometryDataHandler>();
@@ -74,11 +82,13 @@ MapBuilderServer::MapBuilderServer(
   server_builder.RegisterHandler<handlers::AddLandmarkDataHandler>();
   server_builder.RegisterHandler<handlers::AddSensorDataBatchHandler>();
   server_builder.RegisterHandler<handlers::FinishTrajectoryHandler>();
+  server_builder.RegisterHandler<handlers::DeleteTrajectoryHandler>();
   server_builder
       .RegisterHandler<handlers::ReceiveGlobalSlamOptimizationsHandler>();
   server_builder.RegisterHandler<handlers::ReceiveLocalSlamResultsHandler>();
   server_builder.RegisterHandler<handlers::GetSubmapHandler>();
   server_builder.RegisterHandler<handlers::GetTrajectoryNodePosesHandler>();
+  server_builder.RegisterHandler<handlers::GetTrajectoryStatesHandler>();
   server_builder.RegisterHandler<handlers::GetLandmarkPosesHandler>();
   server_builder.RegisterHandler<handlers::GetAllSubmapPosesHandler>();
   server_builder.RegisterHandler<handlers::GetLocalToGlobalTransformHandler>();
@@ -86,25 +96,30 @@ MapBuilderServer::MapBuilderServer(
   server_builder.RegisterHandler<handlers::IsTrajectoryFinishedHandler>();
   server_builder.RegisterHandler<handlers::IsTrajectoryFrozenHandler>();
   server_builder.RegisterHandler<handlers::LoadStateHandler>();
+  server_builder.RegisterHandler<handlers::LoadStateFromFileHandler>();
   server_builder.RegisterHandler<handlers::RunFinalOptimizationHandler>();
   server_builder.RegisterHandler<handlers::WriteStateHandler>();
+  server_builder.RegisterHandler<handlers::WriteStateToFileHandler>();
   server_builder.RegisterHandler<handlers::SetLandmarkPoseHandler>();
   grpc_server_ = server_builder.Build();
   if (map_builder_server_options.map_builder_options()
           .use_trajectory_builder_2d()) {
     grpc_server_->SetExecutionContext(
-        common::make_unique<MapBuilderContext<mapping::Submap2D>>(this));
+        absl::make_unique<MapBuilderContext<mapping::Submap2D>>(this));
   } else if (map_builder_server_options.map_builder_options()
                  .use_trajectory_builder_3d()) {
     grpc_server_->SetExecutionContext(
-        common::make_unique<MapBuilderContext<mapping::Submap3D>>(this));
+        absl::make_unique<MapBuilderContext<mapping::Submap3D>>(this));
   } else {
     LOG(FATAL)
         << "Set either use_trajectory_builder_2d or use_trajectory_builder_3d";
   }
   map_builder_->pose_graph()->SetGlobalSlamOptimizationCallback(
-      std::bind(&MapBuilderServer::OnGlobalSlamOptimizations, this,
-                std::placeholders::_1, std::placeholders::_2));
+      [this](const std::map<int, mapping::SubmapId>& last_optimized_submap_ids,
+             const std::map<int, mapping::NodeId>& last_optimized_node_ids) {
+        OnGlobalSlamOptimizations(last_optimized_submap_ids,
+                                  last_optimized_node_ids);
+      });
 }
 
 void MapBuilderServer::Start() {
@@ -156,13 +171,13 @@ void MapBuilderServer::StartSlamThread() {
   CHECK(!slam_thread_);
 
   // Start the SLAM processing thread.
-  slam_thread_ = common::make_unique<std::thread>(
+  slam_thread_ = absl::make_unique<std::thread>(
       [this]() { this->ProcessSensorDataQueue(); });
 }
 
 void MapBuilderServer::OnLocalSlamResult(
-    int trajectory_id, common::Time time, transform::Rigid3d local_pose,
-    sensor::RangeData range_data,
+    int trajectory_id, const std::string client_id, common::Time time,
+    transform::Rigid3d local_pose, sensor::RangeData range_data,
     std::unique_ptr<const mapping::TrajectoryBuilderInterface::InsertionResult>
         insertion_result) {
   auto shared_range_data =
@@ -173,16 +188,16 @@ void MapBuilderServer::OnLocalSlamResult(
   if (insertion_result &&
       grpc_server_->GetUnsynchronizedContext<MapBuilderContextInterface>()
           ->local_trajectory_uploader()) {
-    auto sensor_data = common::make_unique<proto::SensorData>();
+    auto sensor_data = absl::make_unique<proto::SensorData>();
     auto sensor_id =
         grpc_server_->GetUnsynchronizedContext<MapBuilderContextInterface>()
             ->local_trajectory_uploader()
             ->GetLocalSlamResultSensorId(trajectory_id);
-    CreateSensorDataForLocalSlamResult(sensor_id.id, trajectory_id, time,
-                                       starting_submap_index_,
+    CreateSensorDataForLocalSlamResult(sensor_id.id, trajectory_id, client_id,
+                                       time, starting_submap_index_,
                                        *insertion_result, sensor_data.get());
     // TODO(cschuet): Make this more robust.
-    if (insertion_result->insertion_submaps.front()->finished()) {
+    if (insertion_result->insertion_submaps.front()->insertion_finished()) {
       ++starting_submap_index_;
     }
     grpc_server_->GetUnsynchronizedContext<MapBuilderContextInterface>()
@@ -190,18 +205,18 @@ void MapBuilderServer::OnLocalSlamResult(
         ->EnqueueSensorData(std::move(sensor_data));
   }
 
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   for (auto& entry : local_slam_subscriptions_[trajectory_id]) {
     auto copy_of_insertion_result =
         insertion_result
-            ? common::make_unique<
+            ? absl::make_unique<
                   const mapping::TrajectoryBuilderInterface::InsertionResult>(
                   *insertion_result)
             : nullptr;
     MapBuilderContextInterface::LocalSlamSubscriptionCallback callback =
         entry.second;
     if (!callback(
-            common::make_unique<MapBuilderContextInterface::LocalSlamResult>(
+            absl::make_unique<MapBuilderContextInterface::LocalSlamResult>(
                 MapBuilderContextInterface::LocalSlamResult{
                     trajectory_id, time, local_pose, shared_range_data,
                     std::move(copy_of_insertion_result)}))) {
@@ -214,7 +229,7 @@ void MapBuilderServer::OnLocalSlamResult(
 void MapBuilderServer::OnGlobalSlamOptimizations(
     const std::map<int, mapping::SubmapId>& last_optimized_submap_ids,
     const std::map<int, mapping::NodeId>& last_optimized_node_ids) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   for (auto& entry : global_slam_subscriptions_) {
     if (!entry.second(last_optimized_submap_ids, last_optimized_node_ids)) {
       LOG(INFO) << "Removing subscription with index: " << entry.first;
@@ -227,7 +242,7 @@ MapBuilderContextInterface::LocalSlamSubscriptionId
 MapBuilderServer::SubscribeLocalSlamResults(
     int trajectory_id,
     MapBuilderContextInterface::LocalSlamSubscriptionCallback callback) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   local_slam_subscriptions_[trajectory_id].emplace(current_subscription_index_,
                                                    callback);
   return MapBuilderContextInterface::LocalSlamSubscriptionId{
@@ -237,7 +252,7 @@ MapBuilderServer::SubscribeLocalSlamResults(
 void MapBuilderServer::UnsubscribeLocalSlamResults(
     const MapBuilderContextInterface::LocalSlamSubscriptionId&
         subscription_id) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   CHECK_EQ(local_slam_subscriptions_[subscription_id.trajectory_id].erase(
                subscription_id.subscription_index),
            1u);
@@ -245,19 +260,19 @@ void MapBuilderServer::UnsubscribeLocalSlamResults(
 
 int MapBuilderServer::SubscribeGlobalSlamOptimizations(
     MapBuilderContextInterface::GlobalSlamOptimizationCallback callback) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   global_slam_subscriptions_.emplace(current_subscription_index_, callback);
   return current_subscription_index_++;
 }
 
 void MapBuilderServer::UnsubscribeGlobalSlamOptimizations(
     int subscription_index) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   CHECK_EQ(global_slam_subscriptions_.erase(subscription_index), 1u);
 }
 
 void MapBuilderServer::NotifyFinishTrajectory(int trajectory_id) {
-  common::MutexLocker locker(&subscriptions_lock_);
+  absl::MutexLock locker(&subscriptions_lock_);
   for (auto& entry : local_slam_subscriptions_[trajectory_id]) {
     MapBuilderContextInterface::LocalSlamSubscriptionCallback callback =
         entry.second;

@@ -22,10 +22,10 @@
 #include <limits>
 
 #include "Eigen/Geometry"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/common/math.h"
 #include "cartographer/mapping/internal/3d/scan_matching/low_resolution_matcher.h"
-#include "cartographer/mapping/proto/scan_matching//fast_correlative_scan_matcher_options_3d.pb.h"
+#include "cartographer/mapping/proto/scan_matching/fast_correlative_scan_matcher_options_3d.pb.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
 
@@ -109,36 +109,18 @@ struct Candidate3D {
   bool operator>(const Candidate3D& other) const { return score > other.score; }
 };
 
-namespace {
-
-std::vector<std::pair<Eigen::VectorXf, float>> HistogramsAtAnglesFromNodes(
-    const std::vector<TrajectoryNode>& nodes) {
-  std::vector<std::pair<Eigen::VectorXf, float>> histograms_at_angles;
-  for (const auto& node : nodes) {
-    histograms_at_angles.emplace_back(
-        node.constant_data->rotational_scan_matcher_histogram,
-        transform::GetYaw(
-            node.global_pose *
-            transform::Rigid3d::Rotation(
-                node.constant_data->gravity_alignment.inverse())));
-  }
-  return histograms_at_angles;
-}
-
-}  // namespace
-
 FastCorrelativeScanMatcher3D::FastCorrelativeScanMatcher3D(
     const HybridGrid& hybrid_grid,
     const HybridGrid* const low_resolution_hybrid_grid,
-    const std::vector<TrajectoryNode>& nodes,
+    const Eigen::VectorXf* rotational_scan_matcher_histogram,
     const proto::FastCorrelativeScanMatcherOptions3D& options)
     : options_(options),
       resolution_(hybrid_grid.resolution()),
       width_in_voxels_(hybrid_grid.grid_size()),
       precomputation_grid_stack_(
-          common::make_unique<PrecomputationGridStack3D>(hybrid_grid, options)),
+          absl::make_unique<PrecomputationGridStack3D>(hybrid_grid, options)),
       low_resolution_hybrid_grid_(low_resolution_hybrid_grid),
-      rotational_scan_matcher_(HistogramsAtAnglesFromNodes(nodes)) {}
+      rotational_scan_matcher_(rotational_scan_matcher_histogram) {}
 
 FastCorrelativeScanMatcher3D::~FastCorrelativeScanMatcher3D() {}
 
@@ -167,9 +149,9 @@ FastCorrelativeScanMatcher3D::MatchFullSubmap(
     const Eigen::Quaterniond& global_submap_rotation,
     const TrajectoryNode::Data& constant_data, const float min_score) const {
   float max_point_distance = 0.f;
-  for (const Eigen::Vector3f& point :
+  for (const sensor::RangefinderPoint& point :
        constant_data.high_resolution_point_cloud) {
-    max_point_distance = std::max(max_point_distance, point.norm());
+    max_point_distance = std::max(max_point_distance, point.position.norm());
   }
   const int linear_window_size =
       (width_in_voxels_ + 1) / 2 +
@@ -206,7 +188,7 @@ FastCorrelativeScanMatcher3D::MatchWithSearchParameters(
       search_parameters, discrete_scans, lowest_resolution_candidates,
       precomputation_grid_stack_->max_depth(), min_score);
   if (best_candidate.score > min_score) {
-    return common::make_unique<Result>(Result{
+    return absl::make_unique<Result>(Result{
         best_candidate.score,
         GetPoseFromCandidate(discrete_scans, best_candidate).cast<double>(),
         discrete_scans[best_candidate.scan_index].rotational_score,
@@ -223,9 +205,10 @@ DiscreteScan3D FastCorrelativeScanMatcher3D::DiscretizeScan(
   const PrecomputationGrid3D& original_grid =
       precomputation_grid_stack_->Get(0);
   std::vector<Eigen::Array3i> full_resolution_cell_indices;
-  for (const Eigen::Vector3f& point :
+  for (const sensor::RangefinderPoint& point :
        sensor::TransformPointCloud(point_cloud, pose)) {
-    full_resolution_cell_indices.push_back(original_grid.GetCellIndex(point));
+    full_resolution_cell_indices.push_back(
+        original_grid.GetCellIndex(point.position));
   }
   const int full_resolution_depth = std::min(options_.full_resolution_depth(),
                                              options_.branch_and_bound_depth());
@@ -271,8 +254,8 @@ std::vector<DiscreteScan3D> FastCorrelativeScanMatcher3D::GenerateDiscreteScans(
   // We set this value to something on the order of resolution to make sure that
   // the std::acos() below is defined.
   float max_scan_range = 3.f * resolution_;
-  for (const Eigen::Vector3f& point : point_cloud) {
-    const float range = point.norm();
+  for (const sensor::RangefinderPoint& point : point_cloud) {
+    const float range = point.position.norm();
     max_scan_range = std::max(range, max_scan_range);
   }
   const float kSafetyMargin = 1.f - 1e-2f;

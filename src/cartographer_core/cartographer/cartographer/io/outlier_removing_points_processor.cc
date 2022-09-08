@@ -16,8 +16,8 @@
 
 #include "cartographer/io/outlier_removing_points_processor.h"
 
+#include "absl/memory/memory.h"
 #include "cartographer/common/lua_parameter_dictionary.h"
-#include "cartographer/common/make_unique.h"
 #include "glog/logging.h"
 
 namespace cartographer {
@@ -27,13 +27,23 @@ std::unique_ptr<OutlierRemovingPointsProcessor>
 OutlierRemovingPointsProcessor::FromDictionary(
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
-  return common::make_unique<OutlierRemovingPointsProcessor>(
-      dictionary->GetDouble("voxel_size"), next);
+  const double miss_per_hit_limit = [&]() {
+    if (!dictionary->HasKey("miss_per_hit_limit")) {
+      LOG(INFO) << "Using default value of 3 for miss_per_hit_limit.";
+      return 3.;
+    } else {
+      return dictionary->GetDouble("miss_per_hit_limit");
+    }
+  }();
+  return absl::make_unique<OutlierRemovingPointsProcessor>(
+      dictionary->GetDouble("voxel_size"), miss_per_hit_limit, next);
 }
 
 OutlierRemovingPointsProcessor::OutlierRemovingPointsProcessor(
-    const double voxel_size, PointsProcessor* next)
+    const double voxel_size, const double miss_per_hit_limit,
+    PointsProcessor* next)
     : voxel_size_(voxel_size),
+      miss_per_hit_limit_(miss_per_hit_limit),
       next_(next),
       state_(State::kPhase1),
       voxels_(voxel_size_) {
@@ -81,7 +91,8 @@ PointsProcessor::FlushResult OutlierRemovingPointsProcessor::Flush() {
 void OutlierRemovingPointsProcessor::ProcessInPhaseOne(
     const PointsBatch& batch) {
   for (size_t i = 0; i < batch.points.size(); ++i) {
-    ++voxels_.mutable_value(voxels_.GetCellIndex(batch.points[i]))->hits;
+    ++voxels_.mutable_value(voxels_.GetCellIndex(batch.points[i].position))
+          ->hits;
   }
 }
 
@@ -91,7 +102,7 @@ void OutlierRemovingPointsProcessor::ProcessInPhaseTwo(
   // by better ray casting, and also by marking the hits of the current range
   // data to be excluded.
   for (size_t i = 0; i < batch.points.size(); ++i) {
-    const Eigen::Vector3f delta = batch.points[i] - batch.origin;
+    const Eigen::Vector3f delta = batch.points[i].position - batch.origin;
     const float length = delta.norm();
     for (float x = 0; x < length; x += voxel_size_) {
       const Eigen::Array3i index =
@@ -105,12 +116,11 @@ void OutlierRemovingPointsProcessor::ProcessInPhaseTwo(
 
 void OutlierRemovingPointsProcessor::ProcessInPhaseThree(
     std::unique_ptr<PointsBatch> batch) {
-  constexpr double kMissPerHitLimit = 3;
-  std::unordered_set<int> to_remove;
+  absl::flat_hash_set<int> to_remove;
   for (size_t i = 0; i < batch->points.size(); ++i) {
     const VoxelData voxel =
-        voxels_.value(voxels_.GetCellIndex(batch->points[i]));
-    if (!(voxel.rays < kMissPerHitLimit * voxel.hits)) {
+        voxels_.value(voxels_.GetCellIndex(batch->points[i].position));
+    if (!(voxel.rays < miss_per_hit_limit_ * voxel.hits)) {
       to_remove.insert(i);
     }
   }

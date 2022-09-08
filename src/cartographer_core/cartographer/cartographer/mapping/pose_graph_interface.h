@@ -17,9 +17,10 @@
 #ifndef CARTOGRAPHER_MAPPING_POSE_GRAPH_INTERFACE_H_
 #define CARTOGRAPHER_MAPPING_POSE_GRAPH_INTERFACE_H_
 
+#include <chrono>
 #include <vector>
 
-#include "cartographer/common/optional.h"
+#include "absl/types/optional.h"
 #include "cartographer/mapping/id.h"
 #include "cartographer/mapping/submaps.h"
 #include "cartographer/transform/rigid_transform.h"
@@ -60,7 +61,8 @@ class PoseGraphInterface {
       double rotation_weight;
     };
     std::vector<LandmarkObservation> landmark_observations;
-    common::optional<transform::Rigid3d> global_landmark_pose;
+    absl::optional<transform::Rigid3d> global_landmark_pose;
+    bool frozen = false;
   };
 
   struct SubmapPose {
@@ -76,8 +78,10 @@ class PoseGraphInterface {
   struct TrajectoryData {
     double gravity_constant = 9.8;
     std::array<double, 4> imu_calibration{{1., 0., 0., 0.}};
-    common::optional<transform::Rigid3d> fixed_frame_origin_in_map;
+    absl::optional<transform::Rigid3d> fixed_frame_origin_in_map;
   };
+
+  enum class TrajectoryState { ACTIVE, FINISHED, FROZEN, DELETED };
 
   using GlobalSlamOptimizationCallback =
       std::function<void(const std::map<int /* trajectory_id */, SubmapId>&,
@@ -95,6 +99,11 @@ class PoseGraphInterface {
   // Returns data for all submaps.
   virtual MapById<SubmapId, SubmapData> GetAllSubmapData() const = 0;
 
+  // Returns the current optimized transform and submap itself for the given
+  // 'submap_id'. Returns 'nullptr' for the 'submap' member if the submap does
+  // not exist (anymore).
+  virtual SubmapData GetSubmapData(const SubmapId& submap_id) const = 0;
+
   // Returns the global poses for all submaps.
   virtual MapById<SubmapId, SubmapPose> GetAllSubmapPoses() const = 0;
 
@@ -111,13 +120,20 @@ class PoseGraphInterface {
   virtual MapById<NodeId, TrajectoryNodePose> GetTrajectoryNodePoses()
       const = 0;
 
+  // Returns the states of trajectories.
+  virtual std::map<int, TrajectoryState> GetTrajectoryStates() const = 0;
+
   // Returns the current optimized landmark poses.
   virtual std::map<std::string, transform::Rigid3d> GetLandmarkPoses()
       const = 0;
 
   // Sets global pose of landmark 'landmark_id' to given 'global_pose'.
   virtual void SetLandmarkPose(const std::string& landmark_id,
-                               const transform::Rigid3d& global_pose) = 0;
+                               const transform::Rigid3d& global_pose,
+                               const bool frozen = false) = 0;
+
+  // Deletes a trajectory asynchronously.
+  virtual void DeleteTrajectory(int trajectory_id) = 0;
 
   // Checks if the given trajectory is finished.
   virtual bool IsTrajectoryFinished(int trajectory_id) const = 0;
@@ -131,8 +147,11 @@ class PoseGraphInterface {
   // Returns the collection of constraints.
   virtual std::vector<Constraint> constraints() const = 0;
 
-  // Serializes the constraints and trajectories.
-  virtual proto::PoseGraph ToProto() const = 0;
+  // Serializes the constraints and trajectories. If
+  // 'include_unfinished_submaps' is set to 'true', unfinished submaps, i.e.
+  // submaps that have not yet received all rangefinder data insertions, will
+  // be included, otherwise not.
+  virtual proto::PoseGraph ToProto(bool include_unfinished_submaps) const = 0;
 
   // Sets the callback function that is invoked whenever the global optimization
   // problem is solved.

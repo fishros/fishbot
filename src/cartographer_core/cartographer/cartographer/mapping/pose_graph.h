@@ -19,10 +19,10 @@
 
 #include <memory>
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/mapping/id.h"
 #include "cartographer/mapping/pose_graph_interface.h"
@@ -112,12 +112,7 @@ class PoseGraph : public PoseGraphInterface {
   // Gets the current trajectory clusters.
   virtual std::vector<std::vector<int>> GetConnectedTrajectories() const = 0;
 
-  // Returns the current optimized transform and submap itself for the given
-  // 'submap_id'. Returns 'nullptr' for the 'submap' member if the submap does
-  // not exist (anymore).
-  virtual SubmapData GetSubmapData(const SubmapId& submap_id) const = 0;
-
-  proto::PoseGraph ToProto() const override;
+  proto::PoseGraph ToProto(bool include_unfinished_submaps) const override;
 
   // Returns the IMU data.
   virtual sensor::MapByTime<sensor::ImuData> GetImuData() const = 0;

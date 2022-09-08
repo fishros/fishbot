@@ -18,17 +18,21 @@
 
 #include <memory>
 
-#include "cartographer/common/make_unique.h"
-#include "cartographer/mapping/local_slam_result_data.h"
+#include "absl/memory/memory.h"
+#include "cartographer/mapping/internal/local_slam_result_data.h"
 #include "glog/logging.h"
 
 namespace cartographer {
 namespace mapping {
 
+constexpr float RangeDataCollator::kDefaultIntensityValue;
+
 sensor::TimedPointCloudOriginData RangeDataCollator::AddRangeData(
     const std::string& sensor_id,
-    const sensor::TimedPointCloudData& timed_point_cloud_data) {
+    sensor::TimedPointCloudData timed_point_cloud_data) {
   CHECK_NE(expected_sensor_ids_.count(sensor_id), 0);
+  timed_point_cloud_data.intensities.resize(
+      timed_point_cloud_data.ranges.size(), kDefaultIntensityValue);
   // TODO(gaschler): These two cases can probably be one.
   if (id_to_pending_data_.count(sensor_id) != 0) {
     current_start_ = current_end_;
@@ -36,10 +40,10 @@ sensor::TimedPointCloudOriginData RangeDataCollator::AddRangeData(
     // the two (do not send out current).
     current_end_ = id_to_pending_data_.at(sensor_id).time;
     auto result = CropAndMerge();
-    id_to_pending_data_.emplace(sensor_id, timed_point_cloud_data);
+    id_to_pending_data_.emplace(sensor_id, std::move(timed_point_cloud_data));
     return result;
   }
-  id_to_pending_data_.emplace(sensor_id, timed_point_cloud_data);
+  id_to_pending_data_.emplace(sensor_id, std::move(timed_point_cloud_data));
   if (expected_sensor_ids_.size() != id_to_pending_data_.size()) {
     return {};
   }
@@ -59,17 +63,19 @@ sensor::TimedPointCloudOriginData RangeDataCollator::CropAndMerge() {
   for (auto it = id_to_pending_data_.begin();
        it != id_to_pending_data_.end();) {
     sensor::TimedPointCloudData& data = it->second;
-    sensor::TimedPointCloud& ranges = it->second.ranges;
+    const sensor::TimedPointCloud& ranges = it->second.ranges;
+    const std::vector<float>& intensities = it->second.intensities;
 
     auto overlap_begin = ranges.begin();
     while (overlap_begin < ranges.end() &&
-           data.time + common::FromSeconds((*overlap_begin)[3]) <
+           data.time + common::FromSeconds((*overlap_begin).time) <
                current_start_) {
       ++overlap_begin;
     }
     auto overlap_end = overlap_begin;
     while (overlap_end < ranges.end() &&
-           data.time + common::FromSeconds((*overlap_end)[3]) <= current_end_) {
+           data.time + common::FromSeconds((*overlap_end).time) <=
+               current_end_) {
       ++overlap_end;
     }
     if (ranges.begin() < overlap_begin && !warned_for_dropped_points) {
@@ -82,14 +88,19 @@ sensor::TimedPointCloudOriginData RangeDataCollator::CropAndMerge() {
     if (overlap_begin < overlap_end) {
       std::size_t origin_index = result.origins.size();
       result.origins.push_back(data.origin);
-      double time_correction = common::ToSeconds(data.time - current_end_);
+      const float time_correction =
+          static_cast<float>(common::ToSeconds(data.time - current_end_));
+      auto intensities_overlap_it =
+          intensities.begin() + (overlap_begin - ranges.begin());
+      result.ranges.reserve(result.ranges.size() +
+                            std::distance(overlap_begin, overlap_end));
       for (auto overlap_it = overlap_begin; overlap_it != overlap_end;
-           ++overlap_it) {
-        sensor::TimedPointCloudOriginData::RangeMeasurement point{*overlap_it,
-                                                                  origin_index};
+           ++overlap_it, ++intensities_overlap_it) {
+        sensor::TimedPointCloudOriginData::RangeMeasurement point{
+            *overlap_it, *intensities_overlap_it, origin_index};
         // current_end_ + point_time[3]_after == in_timestamp +
         // point_time[3]_before
-        point.point_time[3] += time_correction;
+        point.point_time.time += time_correction;
         result.ranges.push_back(point);
       }
     }
@@ -100,9 +111,12 @@ sensor::TimedPointCloudOriginData RangeDataCollator::CropAndMerge() {
     } else if (overlap_end == ranges.begin()) {
       ++it;
     } else {
+      const auto intensities_overlap_end =
+          intensities.begin() + (overlap_end - ranges.begin());
       data = sensor::TimedPointCloudData{
           data.time, data.origin,
-          sensor::TimedPointCloud(overlap_end, ranges.end())};
+          sensor::TimedPointCloud(overlap_end, ranges.end()),
+          std::vector<float>(intensities_overlap_end, intensities.end())};
       ++it;
     }
   }
@@ -110,7 +124,7 @@ sensor::TimedPointCloudOriginData RangeDataCollator::CropAndMerge() {
   std::sort(result.ranges.begin(), result.ranges.end(),
             [](const sensor::TimedPointCloudOriginData::RangeMeasurement& a,
                const sensor::TimedPointCloudOriginData::RangeMeasurement& b) {
-              return a.point_time[3] < b.point_time[3];
+              return a.point_time.time < b.point_time.time;
             });
   return result;
 }

@@ -23,7 +23,7 @@
 #include <limits>
 
 #include "Eigen/Geometry"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/common/math.h"
 #include "cartographer/mapping/2d/grid_2d.h"
 #include "cartographer/sensor/point_cloud.h"
@@ -191,7 +191,7 @@ FastCorrelativeScanMatcher2D::FastCorrelativeScanMatcher2D(
     : options_(options),
       limits_(grid.limits()),
       precomputation_grid_stack_(
-          common::make_unique<PrecomputationGridStack2D>(grid, options)) {}
+          absl::make_unique<PrecomputationGridStack2D>(grid, options)) {}
 
 FastCorrelativeScanMatcher2D::~FastCorrelativeScanMatcher2D() {}
 
@@ -229,8 +229,8 @@ bool FastCorrelativeScanMatcher2D::MatchWithSearchParameters(
     const transform::Rigid2d& initial_pose_estimate,
     const sensor::PointCloud& point_cloud, float min_score, float* score,
     transform::Rigid2d* pose_estimate) const {
-  CHECK_NOTNULL(score);
-  CHECK_NOTNULL(pose_estimate);
+  CHECK(score != nullptr);
+  CHECK(pose_estimate != nullptr);
 
   const Eigen::Rotation2Dd initial_rotation = initial_pose_estimate.rotation();
   const sensor::PointCloud rotated_point_cloud = sensor::TransformPointCloud(

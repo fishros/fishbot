@@ -30,19 +30,30 @@ ComputePathToPoseAction::ComputePathToPoseAction(
 
 void ComputePathToPoseAction::on_tick()
 {
-  getInput("goal", goal_.pose);
+  getInput("goal", goal_.goal);
   getInput("planner_id", goal_.planner_id);
+  if (getInput("start", goal_.start)) {
+    goal_.use_start = true;
+  }
 }
 
 BT::NodeStatus ComputePathToPoseAction::on_success()
 {
   setOutput("path", result_.result->path);
+  return BT::NodeStatus::SUCCESS;
+}
 
-  if (first_time_) {
-    first_time_ = false;
-  } else {
-    config().blackboard->set("path_updated", true);
-  }
+BT::NodeStatus ComputePathToPoseAction::on_aborted()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus ComputePathToPoseAction::on_cancelled()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
   return BT::NodeStatus::SUCCESS;
 }
 

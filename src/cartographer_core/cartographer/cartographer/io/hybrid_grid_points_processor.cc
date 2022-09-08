@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Eigen/Core"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/io/file_writer.h"
 #include "cartographer/io/points_batch.h"
 #include "cartographer/io/points_processor.h"
@@ -31,7 +31,7 @@ HybridGridPointsProcessor::FromDictionary(
     const FileWriterFactory& file_writer_factory,
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
-  return common::make_unique<HybridGridPointsProcessor>(
+  return absl::make_unique<HybridGridPointsProcessor>(
       dictionary->GetDouble("voxel_size"),
       mapping::CreateRangeDataInserterOptions3D(
           dictionary->GetDictionary("range_data_inserter").get()),
@@ -39,8 +39,9 @@ HybridGridPointsProcessor::FromDictionary(
 }
 
 void HybridGridPointsProcessor::Process(std::unique_ptr<PointsBatch> batch) {
-  range_data_inserter_.Insert({batch->origin, batch->points, {}},
-                              &hybrid_grid_);
+  range_data_inserter_.Insert(
+      {batch->origin, sensor::PointCloud(batch->points), {}}, &hybrid_grid_,
+      /*intensity_hybrid_grid=*/nullptr);
   next_->Process(std::move(batch));
 }
 

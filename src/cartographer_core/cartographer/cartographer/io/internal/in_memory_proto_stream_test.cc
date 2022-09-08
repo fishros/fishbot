@@ -15,16 +15,16 @@
  */
 
 #include "cartographer/io/internal/in_memory_proto_stream.h"
+
 #include "cartographer/mapping/proto/pose_graph.pb.h"
 #include "cartographer/mapping/proto/serialization.pb.h"
-
 #include "gtest/gtest.h"
 
 namespace cartographer {
 namespace io {
 namespace {
 
-using common::make_unique;
+using absl::make_unique;
 using google::protobuf::Message;
 using mapping::proto::PoseGraph;
 using mapping::proto::SerializedData;

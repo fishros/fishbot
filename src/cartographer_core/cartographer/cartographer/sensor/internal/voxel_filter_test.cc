@@ -24,33 +24,61 @@ namespace cartographer {
 namespace sensor {
 namespace {
 
-using ::testing::ContainerEq;
+using ::testing::Contains;
+using ::testing::IsEmpty;
 
-TEST(VoxelFilterTest, ReturnsTheFirstPointInEachVoxel) {
-  PointCloud point_cloud = {{0.f, 0.f, 0.f},
-                            {0.1f, -0.1f, 0.1f},
-                            {0.3f, -0.1f, 0.f},
-                            {0.f, 0.f, 0.1f}};
-  EXPECT_THAT(VoxelFilter(0.3f).Filter(point_cloud),
-              ContainerEq(PointCloud{point_cloud[0], point_cloud[2]}));
+TEST(VoxelFilterTest, ReturnsOnePointInEachVoxel) {
+  const PointCloud point_cloud({{{0.f, 0.f, 0.f}},
+                                {{0.1f, -0.1f, 0.1f}},
+                                {{0.3f, -0.1f, 0.f}},
+                                {{0.f, 0.f, 0.1f}}});
+  const PointCloud result = VoxelFilter(point_cloud, 0.3f);
+  ASSERT_EQ(result.size(), 2);
+  EXPECT_THAT(result.intensities(), IsEmpty());
+  EXPECT_THAT(point_cloud.points(), Contains(result[0]));
+  EXPECT_THAT(point_cloud.points(), Contains(result[1]));
+  EXPECT_THAT(result.points(), Contains(point_cloud[2]));
+}
+
+TEST(VoxelFilterTest, CorrectIntensities) {
+  std::vector<RangefinderPoint> points;
+  std::vector<float> intensities;
+  for (int i = 0; i < 100; ++i) {
+    const float value = 0.1f * i;
+    // We add points with intensity equal to the z coordinate, so we can later
+    // verify that the resulting intensities are corresponding to the filtered
+    // points.
+    points.push_back({{-100.f, 0.3f, value}});
+    intensities.push_back(value);
+  }
+  const PointCloud point_cloud(points, intensities);
+  const PointCloud result = VoxelFilter(point_cloud, 0.3f);
+
+  ASSERT_EQ(result.intensities().size(), result.points().size());
+  for (size_t i = 0; i < result.size(); ++i) {
+    ASSERT_NEAR(result[i].position.z(), result.intensities()[i], 1e-6);
+  }
 }
 
 TEST(VoxelFilterTest, HandlesLargeCoordinates) {
-  PointCloud point_cloud = {{100000.f, 0.f, 0.f},
-                            {100000.001f, -0.0001f, 0.0001f},
-                            {100000.003f, -0.0001f, 0.f},
-                            {-200000.f, 0.f, 0.f}};
-  EXPECT_THAT(VoxelFilter(0.01f).Filter(point_cloud),
-              ContainerEq(PointCloud{point_cloud[0], point_cloud[3]}));
+  const PointCloud point_cloud({{{100000.f, 0.f, 0.f}},
+                                {{100000.001f, -0.0001f, 0.0001f}},
+                                {{100000.003f, -0.0001f, 0.f}},
+                                {{-200000.f, 0.f, 0.f}}});
+  const PointCloud result = VoxelFilter(point_cloud, 0.01f);
+  EXPECT_EQ(result.size(), 2);
+  EXPECT_THAT(result.intensities(), IsEmpty());
+  EXPECT_THAT(result.points(), Contains(point_cloud[3]));
 }
 
 TEST(VoxelFilterTest, IgnoresTime) {
   TimedPointCloud timed_point_cloud;
   for (int i = 0; i < 100; ++i) {
-    timed_point_cloud.emplace_back(-100.f, 0.3f, 0.4f, 1.f * i);
+    timed_point_cloud.push_back({{-100.f, 0.3f, 0.4f}, 1.f * i});
   }
-  EXPECT_THAT(VoxelFilter(0.3f).Filter(timed_point_cloud),
-              ContainerEq(TimedPointCloud{timed_point_cloud[0]}));
+  const TimedPointCloud result = VoxelFilter(timed_point_cloud, 0.3f);
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_THAT(timed_point_cloud, Contains(result[0]));
 }
 
 }  // namespace

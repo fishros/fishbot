@@ -18,27 +18,40 @@
 
 #include "cartographer/mapping/internal/2d/local_trajectory_builder_options_2d.h"
 #include "cartographer/mapping/internal/3d/local_trajectory_builder_options_3d.h"
-#include "cartographer/mapping/local_slam_result_data.h"
+#include "cartographer/mapping/internal/local_slam_result_data.h"
 
 namespace cartographer {
 namespace mapping {
 namespace {
 
-void PopulateOverlappingSubmapsTrimmerOptions2D(
+void PopulatePureLocalizationTrimmerOptions(
     proto::TrajectoryBuilderOptions* const trajectory_builder_options,
     common::LuaParameterDictionary* const parameter_dictionary) {
-  constexpr char kDictionaryKey[] = "overlapping_submaps_trimmer_2d";
+  constexpr char kDictionaryKey[] = "pure_localization_trimmer";
   if (!parameter_dictionary->HasKey(kDictionaryKey)) return;
 
   auto options_dictionary = parameter_dictionary->GetDictionary(kDictionaryKey);
   auto* options =
-      trajectory_builder_options->mutable_overlapping_submaps_trimmer_2d();
-  options->set_fresh_submaps_count(
-      options_dictionary->GetInt("fresh_submaps_count"));
-  options->set_min_covered_area(
-      options_dictionary->GetDouble("min_covered_area"));
-  options->set_min_added_submaps_count(
-      options_dictionary->GetInt("min_added_submaps_count"));
+      trajectory_builder_options->mutable_pure_localization_trimmer();
+  options->set_max_submaps_to_keep(
+      options_dictionary->GetInt("max_submaps_to_keep"));
+}
+
+void PopulatePoseGraphOdometryMotionFilterOptions(
+    proto::TrajectoryBuilderOptions* const trajectory_builder_options,
+    common::LuaParameterDictionary* const parameter_dictionary) {
+  constexpr char kDictionaryKey[] = "pose_graph_odometry_motion_filter";
+  if (!parameter_dictionary->HasKey(kDictionaryKey)) return;
+
+  auto options_dictionary = parameter_dictionary->GetDictionary(kDictionaryKey);
+  auto* options =
+      trajectory_builder_options->mutable_pose_graph_odometry_motion_filter();
+  options->set_max_time_seconds(
+      options_dictionary->GetDouble("max_time_seconds"));
+  options->set_max_distance_meters(
+      options_dictionary->GetDouble("max_distance_meters"));
+  options->set_max_angle_radians(
+      options_dictionary->GetDouble("max_angle_radians"));
 }
 
 }  // namespace
@@ -52,9 +65,12 @@ proto::TrajectoryBuilderOptions CreateTrajectoryBuilderOptions(
   *options.mutable_trajectory_builder_3d_options() =
       CreateLocalTrajectoryBuilderOptions3D(
           parameter_dictionary->GetDictionary("trajectory_builder_3d").get());
-  options.set_pure_localization(
-      parameter_dictionary->GetBool("pure_localization"));
-  PopulateOverlappingSubmapsTrimmerOptions2D(&options, parameter_dictionary);
+  options.set_collate_fixed_frame(
+      parameter_dictionary->GetBool("collate_fixed_frame"));
+  options.set_collate_landmarks(
+      parameter_dictionary->GetBool("collate_landmarks"));
+  PopulatePureLocalizationTrimmerOptions(&options, parameter_dictionary);
+  PopulatePoseGraphOdometryMotionFilterOptions(&options, parameter_dictionary);
   return options;
 }
 

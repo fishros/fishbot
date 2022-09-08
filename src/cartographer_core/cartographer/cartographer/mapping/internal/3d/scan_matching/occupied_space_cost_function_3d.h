@@ -71,9 +71,9 @@ class OccupiedSpaceCostFunction3D {
                 T* const residual) const {
     for (size_t i = 0; i < point_cloud_.size(); ++i) {
       const Eigen::Matrix<T, 3, 1> world =
-          transform * point_cloud_[i].cast<T>();
+          transform * point_cloud_[i].position.cast<T>();
       const T probability =
-          interpolated_grid_.GetProbability(world[0], world[1], world[2]);
+          interpolated_grid_.GetInterpolatedValue(world[0], world[1], world[2]);
       residual[i] = scaling_factor_ * (1. - probability);
     }
     return true;
@@ -81,7 +81,7 @@ class OccupiedSpaceCostFunction3D {
 
   const double scaling_factor_;
   const sensor::PointCloud& point_cloud_;
-  const InterpolatedGrid interpolated_grid_;
+  const InterpolatedProbabilityGrid interpolated_grid_;
 };
 
 }  // namespace scan_matching

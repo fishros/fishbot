@@ -18,17 +18,26 @@
 #define CARTOGRAPHER_IO_SERIALIZATION_FORMAT_MIGRATION_H_
 
 #include "cartographer/io/proto_stream_interface.h"
+#include "cartographer/mapping/id.h"
+#include "cartographer/mapping/proto/serialization.pb.h"
 
 namespace cartographer {
 namespace io {
 
-// This helper function, migrates the input stream, which is supposed to match
-// to the "old" stream format order (PoseGraph, AllTrajectoryBuilderOptions,
-// SerializedData*) to the version 1 stream format (SerializationHeader,
-// SerializedData*).
-void MigrateStreamFormatToVersion1(
+// This helper function migrates the input stream, which is supposed
+// to contain submaps without histograms (stream format version 1) to
+// an output stream containing submaps with histograms (version 2).
+void MigrateStreamVersion1ToVersion2(
     cartographer::io::ProtoStreamReaderInterface* const input,
-    cartographer::io::ProtoStreamWriterInterface* const output);
+    cartographer::io::ProtoStreamWriterInterface* const output,
+    bool include_unfinished_submaps);
+
+mapping::MapById<mapping::SubmapId, mapping::proto::Submap>
+MigrateSubmapFormatVersion1ToVersion2(
+    const mapping::MapById<mapping::SubmapId, mapping::proto::Submap>&
+        submap_id_to_submaps,
+    mapping::MapById<mapping::NodeId, mapping::proto::Node>& node_id_to_nodes,
+    const mapping::proto::PoseGraph& pose_graph_proto);
 
 }  // namespace io
 }  // namespace cartographer

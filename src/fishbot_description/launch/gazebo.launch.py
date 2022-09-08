@@ -18,7 +18,7 @@ def generate_launch_description():
 
     # Start Gazebo server
     start_gazebo_cmd = ExecuteProcess(
-        cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_factory.so', gazebo_world_path],
+        cmd=['gazebo', '--verbose','-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', gazebo_world_path],
         output='screen')
 
     # Launch the robot
@@ -46,7 +46,7 @@ def generate_launch_description():
     ld.add_action(start_gazebo_cmd)
     ld.add_action(spawn_entity_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(start_rviz_cmd)
+    # ld.add_action(start_rviz_cmd)
 
 
     return ld

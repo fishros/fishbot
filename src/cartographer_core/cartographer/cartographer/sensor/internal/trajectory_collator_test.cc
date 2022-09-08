@@ -19,7 +19,7 @@
 #include <array>
 #include <memory>
 
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/common/time.h"
 #include "cartographer/sensor/imu_data.h"
 #include "cartographer/sensor/internal/test_helpers.h"
@@ -31,8 +31,8 @@ namespace cartographer {
 namespace sensor {
 namespace {
 
-using test::CollatorInput;
-using test::CollatorOutput;
+using testing::CollatorInput;
+using testing::CollatorOutput;
 
 TEST(TrajectoryCollator, OrderingMultipleTrajectories) {
   const int kTrajectoryId[] = {4, 7};
@@ -63,7 +63,7 @@ TEST(TrajectoryCollator, OrderingMultipleTrajectories) {
   TrajectoryCollator collator;
   collator.AddTrajectory(
       kTrajectoryId[0],
-      std::unordered_set<std::string>(kSensorId.begin(), kSensorId.end()),
+      absl::flat_hash_set<std::string>(kSensorId.begin(), kSensorId.end()),
       [&received, kTrajectoryId](const std::string& sensor_id,
                                  std::unique_ptr<Data> data) {
         received.push_back(CollatorOutput(kTrajectoryId[0], data->GetSensorId(),
@@ -71,7 +71,7 @@ TEST(TrajectoryCollator, OrderingMultipleTrajectories) {
       });
   collator.AddTrajectory(
       kTrajectoryId[1],
-      std::unordered_set<std::string>(kSensorId.begin(), kSensorId.end()),
+      absl::flat_hash_set<std::string>(kSensorId.begin(), kSensorId.end()),
       [&received, kTrajectoryId](const std::string& sensor_id,
                                  std::unique_ptr<Data> data) {
         received.push_back(CollatorOutput(kTrajectoryId[1], data->GetSensorId(),

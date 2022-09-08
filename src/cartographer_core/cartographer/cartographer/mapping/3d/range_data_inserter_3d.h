@@ -18,7 +18,7 @@
 #define CARTOGRAPHER_MAPPING_3D_RANGE_DATA_INSERTER_3D_H_
 
 #include "cartographer/mapping/3d/hybrid_grid.h"
-#include "cartographer/mapping/proto/3d/range_data_inserter_options_3d.pb.h"
+#include "cartographer/mapping/proto/range_data_inserter_options_3d.pb.h"
 #include "cartographer/sensor/point_cloud.h"
 #include "cartographer/sensor/range_data.h"
 
@@ -36,9 +36,10 @@ class RangeDataInserter3D {
   RangeDataInserter3D(const RangeDataInserter3D&) = delete;
   RangeDataInserter3D& operator=(const RangeDataInserter3D&) = delete;
 
-  // Inserts 'range_data' into 'hybrid_grid'.
-  void Insert(const sensor::RangeData& range_data,
-              HybridGrid* hybrid_grid) const;
+  // Inserts 'range_data' into 'hybrid_grid' and optionally into
+  // 'intensity_hybrid_grid'.
+  void Insert(const sensor::RangeData& range_data, HybridGrid* hybrid_grid,
+              IntensityHybridGrid* intensity_hybrid_grid) const;
 
  private:
   const proto::RangeDataInserterOptions3D options_;

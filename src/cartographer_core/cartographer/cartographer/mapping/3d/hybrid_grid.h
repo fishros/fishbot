@@ -24,11 +24,11 @@
 #include <vector>
 
 #include "Eigen/Core"
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/common/math.h"
 #include "cartographer/common/port.h"
 #include "cartographer/mapping/probability_values.h"
-#include "cartographer/mapping/proto/3d/hybrid_grid.pb.h"
+#include "cartographer/mapping/proto/hybrid_grid.pb.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
 
@@ -169,7 +169,7 @@ class NestedGrid {
     std::unique_ptr<WrappedGrid>& meta_cell =
         meta_cells_[ToFlatIndex(meta_index, kBits)];
     if (meta_cell == nullptr) {
-      meta_cell = common::make_unique<WrappedGrid>();
+      meta_cell = absl::make_unique<WrappedGrid>();
     }
     const Eigen::Array3i inner_index =
         index - meta_index * WrappedGrid::grid_size();
@@ -292,7 +292,7 @@ class DynamicGrid {
     std::unique_ptr<WrappedGrid>& meta_cell =
         meta_cells_[ToFlatIndex(meta_index, bits_)];
     if (meta_cell == nullptr) {
-      meta_cell = common::make_unique<WrappedGrid>();
+      meta_cell = absl::make_unique<WrappedGrid>();
     }
     const Eigen::Array3i inner_index =
         shifted_index - meta_index * WrappedGrid::grid_size();
@@ -542,6 +542,32 @@ class HybridGrid : public HybridGridBase<uint16> {
  private:
   // Markers at changed cells.
   std::vector<ValueType*> update_indices_;
+};
+
+struct AverageIntensityData {
+  float sum = 0.f;
+  int count = 0;
+};
+
+class IntensityHybridGrid : public HybridGridBase<AverageIntensityData> {
+ public:
+  explicit IntensityHybridGrid(const float resolution)
+      : HybridGridBase<AverageIntensityData>(resolution) {}
+
+  void AddIntensity(const Eigen::Array3i& index, const float intensity) {
+    AverageIntensityData* const cell = mutable_value(index);
+    cell->count += 1;
+    cell->sum += intensity;
+  }
+
+  float GetIntensity(const Eigen::Array3i& index) const {
+    const AverageIntensityData& cell = value(index);
+    if (cell.count == 0) {
+      return 0.f;
+    } else {
+      return cell.sum / cell.count;
+    }
+  }
 };
 
 }  // namespace mapping

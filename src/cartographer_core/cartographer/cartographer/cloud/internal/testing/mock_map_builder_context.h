@@ -18,7 +18,7 @@
 #define CARTOGRAPHER_CLOUD_INTERNAL_TESTING_MOCK_MAP_BUILDER_CONTEXT_H
 
 #include "cartographer/cloud/internal/map_builder_context_interface.h"
-#include "cartographer/mapping/local_slam_result_data.h"
+#include "cartographer/mapping/internal/local_slam_result_data.h"
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -59,6 +59,8 @@ class MockMapBuilderContext : public MapBuilderContextInterface {
   MOCK_METHOD3(EnqueueLocalSlamResultData,
                void(int, const std::string &,
                     const mapping::proto::LocalSlamResultData &));
+  MOCK_METHOD2(RegisterClientIdForTrajectory, void(const std::string &, int));
+  MOCK_METHOD2(CheckClientIdForTrajectory, bool(const std::string &, int));
 };
 
 }  // namespace testing

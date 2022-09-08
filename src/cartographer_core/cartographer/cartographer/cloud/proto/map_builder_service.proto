@@ -33,6 +33,13 @@ enum SensorType {
   LOCAL_SLAM_RESULT = 5;
 }
 
+enum TrajectoryState {
+  ACTIVE = 0;
+  FINISHED = 1;
+  FROZEN = 2;
+  DELETED = 3;
+}
+
 message SensorId {
   string id = 1;
   SensorType type = 2;
@@ -42,11 +49,13 @@ message AddTrajectoryRequest {
   repeated SensorId expected_sensor_ids = 3;
   cartographer.mapping.proto.TrajectoryBuilderOptions
       trajectory_builder_options = 2;
+  string client_id = 4;
 }
 
 message SensorMetadata {
   int32 trajectory_id = 1;
   string sensor_id = 2;
+  string client_id = 3;
 }
 
 message SensorData {
@@ -96,6 +105,12 @@ message AddLandmarkDataRequest {
 
 message FinishTrajectoryRequest {
   int32 trajectory_id = 1;
+  string client_id = 2;
+}
+
+message DeleteTrajectoryRequest {
+  int32 trajectory_id = 1;
+  string client_id = 2;
 }
 
 message ReceiveLocalSlamResultsRequest {
@@ -127,11 +142,30 @@ message GetSubmapRequest {
 
 message LoadStateRequest {
   oneof state_chunk {
-    cartographer.mapping.proto.PoseGraph pose_graph = 1;
-    cartographer.mapping.proto.AllTrajectoryBuilderOptions
-        all_trajectory_builder_options = 2;
-    cartographer.mapping.proto.SerializedData serialized_data = 3;
+    cartographer.mapping.proto.SerializedData serialized_data = 1;
+    cartographer.mapping.proto.SerializationHeader serialization_header = 2;
+    string client_id = 3;
   }
+  bool load_frozen_state = 4;
+}
+
+message TrajectoryRemapping {
+  map<int32 /* serialized trajectory id */, int32 /* trajectory id */>
+      serialized_trajectories_to_trajectories = 1;
+}
+
+message LoadStateResponse {
+  TrajectoryRemapping trajectory_remapping = 1;
+}
+
+message LoadStateFromFileRequest {
+  string file_path = 1;
+  string client_id = 2;
+  bool load_frozen_state = 3;
+}
+
+message LoadStateFromFileResponse {
+  TrajectoryRemapping trajectory_remapping = 1;
 }
 
 message GetSubmapResponse {
@@ -151,6 +185,10 @@ message TrajectoryNodePose {
 
 message GetTrajectoryNodePosesResponse {
   repeated TrajectoryNodePose node_poses = 1;
+}
+
+message GetTrajectoryStatesResponse {
+  map<int32 /* trajectory_id */, TrajectoryState> trajectories_state = 1;
 }
 
 message GetLandmarkPosesResponse {
@@ -188,6 +226,14 @@ message WriteStateResponse {
     cartographer.mapping.proto.SerializationHeader header = 1;
     cartographer.mapping.proto.SerializedData serialized_data = 2;
   }
+}
+
+message WriteStateToFileRequest {
+  string filename = 1;
+}
+
+message WriteStateToFileResponse {
+  bool success = 1;
 }
 
 message IsTrajectoryFinishedRequest {
@@ -247,12 +293,19 @@ service MapBuilderService {
   // i.e. no further sensor data is expected.
   rpc FinishTrajectory(FinishTrajectoryRequest) returns (google.protobuf.Empty);
 
+  // Deletes a trajectory asynchronously.
+  rpc DeleteTrajectory(DeleteTrajectoryRequest) returns (google.protobuf.Empty);
+
   // Retrieves a single submap.
   rpc GetSubmap(GetSubmapRequest) returns (GetSubmapResponse);
 
   // Returns the current optimized trajectory poses.
   rpc GetTrajectoryNodePoses(google.protobuf.Empty)
       returns (GetTrajectoryNodePosesResponse);
+
+  // Returns the states of trajectories.
+  rpc GetTrajectoryStates(google.protobuf.Empty)
+      returns (GetTrajectoryStatesResponse);
 
   // Returns the current optimized landmark poses.
   rpc GetLandmarkPoses(google.protobuf.Empty)
@@ -285,9 +338,17 @@ service MapBuilderService {
       returns (google.protobuf.Empty);
 
   // Adds serialized SLAM state data in the order defined by ProtoStreamReader.
-  rpc LoadState(stream LoadStateRequest) returns (google.protobuf.Empty);
+  rpc LoadState(stream LoadStateRequest) returns (LoadStateResponse);
+
+  // Loads a serialized SLAM state data from the host file system.
+  rpc LoadStateFromFile(LoadStateFromFileRequest)
+      returns (LoadStateFromFileResponse);
 
   // Receives serialized SLAM state data in the order defined by
   // ProtoStreamWriter.
   rpc WriteState(google.protobuf.Empty) returns (stream WriteStateResponse);
+
+  // Writes the serialized SLAM state to the host file system.
+  rpc WriteStateToFile(WriteStateToFileRequest)
+      returns (WriteStateToFileResponse);
 }

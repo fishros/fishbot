@@ -26,13 +26,14 @@
 #include "cartographer/mapping/internal/3d/scan_matching/real_time_correlative_scan_matcher_3d.h"
 #include "cartographer/mapping/internal/motion_filter.h"
 #include "cartographer/mapping/internal/range_data_collator.h"
-#include "cartographer/mapping/pose_extrapolator.h"
-#include "cartographer/mapping/proto/3d/local_trajectory_builder_options_3d.pb.h"
+#include "cartographer/mapping/pose_extrapolator_interface.h"
+#include "cartographer/mapping/proto/local_trajectory_builder_options_3d.pb.h"
 #include "cartographer/metrics/family_factory.h"
 #include "cartographer/sensor/imu_data.h"
 #include "cartographer/sensor/internal/voxel_filter.h"
 #include "cartographer/sensor/odometry_data.h"
 #include "cartographer/sensor/range_data.h"
+#include "cartographer/sensor/timed_point_cloud_data.h"
 #include "cartographer/transform/rigid_transform.h"
 
 namespace cartographer {
@@ -77,7 +78,10 @@ class LocalTrajectoryBuilder3D {
  private:
   std::unique_ptr<MatchingResult> AddAccumulatedRangeData(
       common::Time time,
-      const sensor::RangeData& filtered_range_data_in_tracking);
+      const sensor::RangeData& filtered_range_data_in_tracking,
+      const absl::optional<common::Duration>& sensor_duration,
+      const transform::Rigid3d& pose_prediction,
+      const Eigen::Quaterniond& gravity_alignment);
 
   std::unique_ptr<InsertionResult> InsertIntoSubmap(
       common::Time time, const sensor::RangeData& filtered_range_data_in_local,
@@ -87,6 +91,13 @@ class LocalTrajectoryBuilder3D {
       const transform::Rigid3d& pose_estimate,
       const Eigen::Quaterniond& gravity_alignment);
 
+  // Scan matches using the two point clouds and returns the observed pose, or
+  // nullptr on failure.
+  std::unique_ptr<transform::Rigid3d> ScanMatch(
+      const transform::Rigid3d& pose_prediction,
+      const sensor::PointCloud& low_resolution_point_cloud_in_tracking,
+      const sensor::PointCloud& high_resolution_point_cloud_in_tracking);
+
   const mapping::proto::LocalTrajectoryBuilderOptions3D options_;
   mapping::ActiveSubmaps3D active_submaps_;
 
@@ -95,13 +106,18 @@ class LocalTrajectoryBuilder3D {
       real_time_correlative_scan_matcher_;
   std::unique_ptr<scan_matching::CeresScanMatcher3D> ceres_scan_matcher_;
 
-  std::unique_ptr<mapping::PoseExtrapolator> extrapolator_;
+  std::unique_ptr<mapping::PoseExtrapolatorInterface> extrapolator_;
 
   int num_accumulated_ = 0;
-  sensor::RangeData accumulated_range_data_;
-  std::chrono::steady_clock::time_point accumulation_started_;
+  std::vector<sensor::TimedPointCloudOriginData>
+      accumulated_point_cloud_origin_data_;
+  absl::optional<std::chrono::steady_clock::time_point> last_wall_time_;
+
+  absl::optional<double> last_thread_cpu_time_seconds_;
 
   RangeDataCollator range_data_collator_;
+
+  absl::optional<common::Time> last_sensor_time_;
 };
 
 }  // namespace mapping

@@ -21,7 +21,7 @@ namespace sensor {
 
 void Collator::AddTrajectory(
     const int trajectory_id,
-    const std::unordered_set<std::string>& expected_sensor_ids,
+    const absl::flat_hash_set<std::string>& expected_sensor_ids,
     const Callback& callback) {
   for (const auto& sensor_id : expected_sensor_ids) {
     const auto queue_key = QueueKey{trajectory_id, sensor_id};
@@ -47,8 +47,8 @@ void Collator::AddSensorData(const int trajectory_id,
 
 void Collator::Flush() { queue_.Flush(); }
 
-common::optional<int> Collator::GetBlockingTrajectoryId() const {
-  return common::optional<int>(queue_.GetBlocker().trajectory_id);
+absl::optional<int> Collator::GetBlockingTrajectoryId() const {
+  return absl::optional<int>(queue_.GetBlocker().trajectory_id);
 }
 
 }  // namespace sensor

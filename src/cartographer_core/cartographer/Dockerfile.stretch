@@ -14,11 +14,20 @@
 
 FROM debian:stretch
 
+ARG cc
+ARG cxx
+
+# Set the preferred C/C++ compiler toolchain, if given (otherwise default).
+ENV CC=$cc
+ENV CXX=$cxx
+
 # This base image doesn't ship with sudo.
 RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
 
 COPY scripts/install_debs_cmake.sh cartographer/scripts/
 RUN cartographer/scripts/install_debs_cmake.sh && rm -rf /var/lib/apt/lists/*
+COPY scripts/install_abseil.sh cartographer/scripts/
+RUN cartographer/scripts/install_abseil.sh && rm -rf /var/lib/apt/lists/*
 COPY scripts/install_ceres.sh cartographer/scripts/
 RUN cartographer/scripts/install_ceres.sh && rm -rf ceres-solver
 COPY scripts/install_proto3.sh cartographer/scripts/

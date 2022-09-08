@@ -21,6 +21,8 @@ def generate_launch_description():
     configuration_directory = LaunchConfiguration('configuration_directory',default= os.path.join(pkg_share, 'config') )
     # 配置文件
     configuration_basename = LaunchConfiguration('configuration_basename', default='fishbot_2d.lua')
+    rviz_config_dir = os.path.join(pkg_share, 'config')+"/cartographer.rviz"
+    print(f"rviz config in {rviz_config_dir}")
 
     
     #=====================声明三个节点，cartographer/occupancy_grid_node/rviz_node=================================
@@ -33,10 +35,10 @@ def generate_launch_description():
         arguments=['-configuration_directory', configuration_directory,
                    '-configuration_basename', configuration_basename])
 
-    occupancy_grid_node = Node(
+    cartographer_occupancy_grid_node = Node(
         package='cartographer_ros',
-        executable='occupancy_grid_node',
-        name='occupancy_grid_node',
+        executable='cartographer_occupancy_grid_node',
+        name='cartographer_occupancy_grid_node',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
         arguments=['-resolution', resolution, '-publish_period_sec', publish_period_sec])
@@ -45,14 +47,14 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz2',
-        # arguments=['-d', rviz_config_dir],
+        arguments=['-d', rviz_config_dir],
         parameters=[{'use_sim_time': use_sim_time}],
         output='screen')
 
     #===============================================定义启动文件========================================================
     ld = LaunchDescription()
     ld.add_action(cartographer_node)
-    ld.add_action(occupancy_grid_node)
+    ld.add_action(cartographer_occupancy_grid_node)
     ld.add_action(rviz_node)
 
     return ld

@@ -20,7 +20,7 @@
 #include <random>
 
 #include "Eigen/Core"
-#include "cartographer/common/lua_parameter_dictionary_test_helpers.h"
+#include "cartographer/common/internal/testing/lua_parameter_dictionary_test_helpers.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/3d/hybrid_grid.h"
 #include "cartographer/mapping/internal/3d/local_trajectory_builder_options_3d.h"
@@ -96,7 +96,30 @@ class LocalTrajectoryBuilderTest : public ::testing::Test {
 
           imu_gravity_time_constant = 1.,
           rotational_histogram_size = 120,
-
+          
+          pose_extrapolator = {
+            use_imu_based = false,
+            constant_velocity = {
+              imu_gravity_time_constant = 10.,
+              pose_queue_duration = 0.001,
+            },
+            imu_based = {
+              pose_queue_duration = 5.,
+              gravity_constant = 9.806,
+              pose_translation_weight = 1.,
+              pose_rotation_weight = 1.,
+              imu_acceleration_weight = 1.,
+              imu_rotation_weight = 1.,
+              odometry_translation_weight = 1.,
+              odometry_rotation_weight = 1.,
+              solver_options = {
+                use_nonmonotonic_steps = false;
+                max_num_iterations = 10;
+                num_threads = 1;
+              },
+            },
+          },
+          
           submaps = {
             high_resolution = 0.2,
             high_resolution_max_range = 50.,
@@ -106,8 +129,11 @@ class LocalTrajectoryBuilderTest : public ::testing::Test {
               hit_probability = 0.7,
               miss_probability = 0.4,
               num_free_space_voxels = 0,
+              intensity_threshold = 100.0,
             },
           },
+
+          use_intensities = false,
         }
         )text");
     return mapping::CreateLocalTrajectoryBuilderOptions3D(
@@ -174,49 +200,50 @@ class LocalTrajectoryBuilderTest : public ::testing::Test {
     return first * (to - from) + from;
   }
 
-  sensor::TimedRangeData GenerateRangeData(const transform::Rigid3d& pose) {
+  sensor::TimedPointCloudData GeneratePointCloudData(
+      const transform::Rigid3d& pose, const common::Time time) {
     // 360 degree rays at 16 angles.
     sensor::TimedPointCloud directions_in_rangefinder_frame;
     for (int r = -8; r != 8; ++r) {
       for (int s = -250; s != 250; ++s) {
-        Eigen::Vector4f first_point;
-        first_point << Eigen::AngleAxisf(M_PI * s / 250.,
-                                         Eigen::Vector3f::UnitZ()) *
-                           Eigen::AngleAxisf(M_PI / 12. * r / 8.,
-                                             Eigen::Vector3f::UnitY()) *
-                           Eigen::Vector3f::UnitX(),
-            0.;
+        const sensor::TimedRangefinderPoint first_point{
+            Eigen::Vector3f{
+                Eigen::AngleAxisf(M_PI * s / 250., Eigen::Vector3f::UnitZ()) *
+                Eigen::AngleAxisf(M_PI / 12. * r / 8.,
+                                  Eigen::Vector3f::UnitY()) *
+                Eigen::Vector3f::UnitX()},
+            0.};
         directions_in_rangefinder_frame.push_back(first_point);
         // Second orthogonal rangefinder.
-        Eigen::Vector4f second_point;
-        second_point << Eigen::AngleAxisf(M_PI / 2., Eigen::Vector3f::UnitX()) *
-                            Eigen::AngleAxisf(M_PI * s / 250.,
-                                              Eigen::Vector3f::UnitZ()) *
-                            Eigen::AngleAxisf(M_PI / 12. * r / 8.,
-                                              Eigen::Vector3f::UnitY()) *
-                            Eigen::Vector3f::UnitX(),
-            0.;
+        const sensor::TimedRangefinderPoint second_point{
+            Eigen::Vector3f{
+                Eigen::AngleAxisf(M_PI / 2., Eigen::Vector3f::UnitX()) *
+                Eigen::AngleAxisf(M_PI * s / 250., Eigen::Vector3f::UnitZ()) *
+                Eigen::AngleAxisf(M_PI / 12. * r / 8.,
+                                  Eigen::Vector3f::UnitY()) *
+                Eigen::Vector3f::UnitX()},
+            0.};
         directions_in_rangefinder_frame.push_back(second_point);
       }
     }
     // We simulate a 30 m edge length box around the origin, also containing
     // 50 cm radius spheres.
     sensor::TimedPointCloud returns_in_world_frame;
-    for (const Eigen::Vector4f& direction_in_world_frame :
+    for (const auto& direction_in_world_frame :
          sensor::TransformTimedPointCloud(directions_in_rangefinder_frame,
                                           pose.cast<float>())) {
       const Eigen::Vector3f origin =
           pose.cast<float>() * Eigen::Vector3f::Zero();
-      Eigen::Vector4f return_point;
-      return_point << CollideWithBubbles(
-          origin, CollideWithBox(origin, direction_in_world_frame.head<3>())),
-          0.;
+      const sensor::TimedRangefinderPoint return_point{
+          CollideWithBubbles(
+              origin,
+              CollideWithBox(origin, direction_in_world_frame.position)),
+          0.};
       returns_in_world_frame.push_back(return_point);
     }
-    return {Eigen::Vector3f::Zero(),
+    return {time, Eigen::Vector3f::Zero(),
             sensor::TransformTimedPointCloud(returns_in_world_frame,
-                                             pose.inverse().cast<float>()),
-            {}};
+                                             pose.inverse().cast<float>())};
   }
 
   void AddLinearOnlyImuObservation(const common::Time time,
@@ -254,11 +281,10 @@ class LocalTrajectoryBuilderTest : public ::testing::Test {
     int num_poses = 0;
     for (const TrajectoryNode& node : expected_trajectory) {
       AddLinearOnlyImuObservation(node.time, node.pose);
-      const auto range_data = GenerateRangeData(node.pose);
+      const auto point_cloud = GeneratePointCloudData(node.pose, node.time);
       const std::unique_ptr<LocalTrajectoryBuilder3D::MatchingResult>
-          matching_result = local_trajectory_builder_->AddRangeData(
-              kSensorId, sensor::TimedPointCloudData{
-                             node.time, range_data.origin, range_data.returns});
+          matching_result =
+              local_trajectory_builder_->AddRangeData(kSensorId, point_cloud);
       if (matching_result != nullptr) {
         EXPECT_THAT(matching_result->local_pose,
                     transform::IsNearly(node.pose, 1e-1));

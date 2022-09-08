@@ -37,8 +37,9 @@ class MapSaver : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::MapSaver
+   * @param options Additional options to control creation of the node.
    */
-  MapSaver();
+  explicit MapSaver(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for the nav2_map_server::MapServer
@@ -55,7 +56,6 @@ public:
     const std::string & map_topic,
     const SaveParameters & save_parameters);
 
-protected:
   /**
    * @brief Sets up map saving service
    * @param state Lifecycle Node's state
@@ -87,6 +87,7 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+protected:
   /**
    * @brief Map saving service callback
    * @param request_header Service request header

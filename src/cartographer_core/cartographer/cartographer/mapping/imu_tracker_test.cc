@@ -16,7 +16,8 @@
 
 #include "cartographer/mapping/imu_tracker.h"
 
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
+#include "cartographer/mapping/internal/eigen_quaterniond_from_two_vectors.h"
 #include "gtest/gtest.h"
 
 namespace cartographer {
@@ -31,7 +32,7 @@ constexpr int kSteps = 10;
 class ImuTrackerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    imu_tracker_ = common::make_unique<ImuTracker>(kGravityTimeConstant, time_);
+    imu_tracker_ = absl::make_unique<ImuTracker>(kGravityTimeConstant, time_);
     angular_velocity_ = Eigen::Vector3d(0, 0, 0);
     linear_acceleration_ = Eigen::Vector3d(0, 0, 9.9);
     EXPECT_NEAR(0.,
@@ -82,9 +83,8 @@ TEST_F(ImuTrackerTest, IntegrateFullRotation) {
 TEST_F(ImuTrackerTest, LearnGravityVector) {
   linear_acceleration_ = Eigen::Vector3d(0.5, 0.3, 9.5);
   AdvanceImu();
-  Eigen::Quaterniond expected_orientation;
-  expected_orientation.setFromTwoVectors(linear_acceleration_,
-                                         Eigen::Vector3d::UnitZ());
+  const Eigen::Quaterniond expected_orientation =
+      FromTwoVectors(linear_acceleration_, Eigen::Vector3d::UnitZ());
   EXPECT_NEAR(0.,
               imu_tracker_->orientation().angularDistance(expected_orientation),
               kPrecision);

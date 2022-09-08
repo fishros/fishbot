@@ -24,7 +24,7 @@
 #include "Eigen/Geometry"
 #include "cartographer/common/math.h"
 #include "cartographer/mapping/2d/xy_index.h"
-#include "cartographer/mapping/proto/2d/map_limits.pb.h"
+#include "cartographer/mapping/proto/map_limits.pb.h"
 #include "cartographer/mapping/trajectory_node.h"
 #include "cartographer/sensor/point_cloud.h"
 #include "cartographer/sensor/range_data.h"
@@ -73,6 +73,12 @@ class MapLimits {
     return Eigen::Array2i(
         common::RoundToInt((max_.y() - point.y()) / resolution_ - 0.5),
         common::RoundToInt((max_.x() - point.x()) / resolution_ - 0.5));
+  }
+
+  // Returns the center of the cell at 'cell_index'.
+  Eigen::Vector2f GetCellCenter(const Eigen::Array2i cell_index) const {
+    return {max_.x() - resolution() * (cell_index[1] + 0.5),
+            max_.y() - resolution() * (cell_index[0] + 0.5)};
   }
 
   // Returns true if the ProbabilityGrid contains 'cell_index'.

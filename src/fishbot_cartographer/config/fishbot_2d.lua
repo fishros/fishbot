@@ -1,4 +1,3 @@
-
 include "map_builder.lua"
 include "trajectory_builder.lua"
 
@@ -7,6 +6,7 @@ options = {
   trajectory_builder = TRAJECTORY_BUILDER,
   map_frame = "map",
   tracking_frame = "base_link",
+  -- base_link改为odom,发布map到odom之间的位姿态
   published_frame = "odom",
   odom_frame = "odom",
   -- true改为false，不用提供里程计数据

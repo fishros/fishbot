@@ -23,7 +23,7 @@
 #include <string>
 #include <tuple>
 
-#include "cartographer/common/blocking_queue.h"
+#include "cartographer/common/internal/blocking_queue.h"
 #include "cartographer/common/port.h"
 #include "cartographer/common/time.h"
 #include "cartographer/sensor/internal/dispatchable.h"
@@ -51,6 +51,8 @@ class OrderedMultiQueue {
   using Callback = std::function<void(std::unique_ptr<Data>)>;
 
   OrderedMultiQueue();
+  OrderedMultiQueue(OrderedMultiQueue&& queue) = default;
+
   ~OrderedMultiQueue();
 
   // Adds a new queue with key 'queue_key' which must not already exist.

@@ -15,6 +15,7 @@
  */
 
 #include "cartographer/cloud/internal/handlers/add_trajectory_handler.h"
+
 #include "cartographer/cloud/internal/sensor/serialization.h"
 #include "cartographer/cloud/internal/testing/handler_test.h"
 #include "cartographer/cloud/internal/testing/test_helpers.h"
@@ -36,6 +37,7 @@ using ::testing::Test;
 using ::testing::Truly;
 
 const std::string kMessage = R"(
+    client_id: "CLIENT_ID"
     expected_sensor_ids {
       id: "range_sensor"
       type: RANGE
@@ -49,7 +51,9 @@ const std::string kMessage = R"(
         min_range: 20
         max_range: 30
       }
-      pure_localization: true
+      pure_localization_trimmer {
+        max_submaps_to_keep: 3
+      }
       initial_trajectory_pose {
         relative_pose {
           translation {
@@ -71,7 +75,7 @@ class AddTrajectoryHandlerTest
  public:
   void SetUp() override {
     testing::HandlerTest<AddTrajectorySignature, AddTrajectoryHandler>::SetUp();
-    mock_map_builder_ = common::make_unique<mapping::testing::MockMapBuilder>();
+    mock_map_builder_ = absl::make_unique<mapping::testing::MockMapBuilder>();
     EXPECT_CALL(*mock_map_builder_context_,
                 GetLocalSlamResultCallbackForSubscriptions())
         .WillOnce(Return(nullptr));
@@ -103,6 +107,8 @@ TEST_F(AddTrajectoryHandlerTest, NoLocalSlamUploader) {
                                        &request.trajectory_builder_options())),
                                    _))
       .WillOnce(Return(13));
+  EXPECT_CALL(*mock_map_builder_context_,
+              RegisterClientIdForTrajectory(Eq("CLIENT_ID"), Eq(13)));
   test_server_->SendWrite(request);
   EXPECT_EQ(test_server_->response().trajectory_id(), 13);
 }
@@ -118,15 +124,20 @@ TEST_F(AddTrajectoryHandlerTest, WithLocalSlamUploader) {
                                        &request.trajectory_builder_options())),
                                    _))
       .WillOnce(Return(13));
+  EXPECT_CALL(*mock_map_builder_context_,
+              RegisterClientIdForTrajectory(Eq("CLIENT_ID"), Eq(13)));
   auto upstream_trajectory_builder_options =
       request.trajectory_builder_options();
+  // Reproduce the changes to the request as done by the handler.
   upstream_trajectory_builder_options.clear_trajectory_builder_2d_options();
   upstream_trajectory_builder_options.clear_trajectory_builder_3d_options();
-  upstream_trajectory_builder_options.set_pure_localization(false);
+  upstream_trajectory_builder_options.clear_pure_localization_trimmer();
+  upstream_trajectory_builder_options.clear_initial_trajectory_pose();
   EXPECT_CALL(*mock_local_trajectory_uploader_,
-              AddTrajectory(Eq(13), ParseSensorIds(request),
+              AddTrajectory(Eq("CLIENT_ID"), Eq(13), ParseSensorIds(request),
                             Truly(testing::BuildProtoPredicateEquals(
-                                &upstream_trajectory_builder_options))));
+                                &upstream_trajectory_builder_options))))
+      .WillOnce(Return(grpc::Status::OK));
   test_server_->SendWrite(request);
   EXPECT_EQ(test_server_->response().trajectory_id(), 13);
 }

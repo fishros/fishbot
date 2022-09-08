@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef CARTOGRAPHER_IO_INTERNAL_MAPPING_STATE_SERIALIZATION_H_
 #define CARTOGRAPHER_IO_INTERNAL_MAPPING_STATE_SERIALIZATION_H_
 
@@ -24,14 +25,15 @@ namespace cartographer {
 namespace io {
 
 // The current serialization format version.
-static constexpr int kMappingStateSerializationFormatVersion = 1;
+static constexpr int kMappingStateSerializationFormatVersion = 2;
+static constexpr int kFormatVersionWithoutSubmapHistograms = 1;
 
 // Serialize mapping state to a pbstream.
 void WritePbStream(
     const mapping::PoseGraph& pose_graph,
     const std::vector<mapping::proto::TrajectoryBuilderOptionsWithSensorIds>&
         builder_options,
-    ProtoStreamWriterInterface* const writer);
+    ProtoStreamWriterInterface* const writer, bool include_unfinished_submaps);
 
 }  // namespace io
 }  // namespace cartographer

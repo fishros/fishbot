@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+#include "cartographer/io/proto_stream_deserializer.h"
+
 #include <memory>
 
 #include "cartographer/io/internal/in_memory_proto_stream.h"
-#include "cartographer/io/proto_stream_deserializer.h"
+#include "cartographer/io/internal/testing/test_helpers.h"
 #include "glog/logging.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
@@ -28,7 +30,8 @@ namespace cartographer {
 namespace io {
 namespace {
 
-using ::cartographer::common::make_unique;
+using ::cartographer::io::testing::ProtoFromStringOrDie;
+using ::cartographer::io::testing::ProtoReaderFromStrings;
 using ::cartographer::mapping::proto::SerializationHeader;
 using ::cartographer::mapping::proto::SerializedData;
 using ::google::protobuf::Message;
@@ -50,46 +53,26 @@ constexpr char kOdometryDataProtoString[] = "odometry_data {}";
 constexpr char kFixedFramePoseDataProtoString[] = "fixed_frame_pose_data {}";
 constexpr char kLandmarkDataProtoString[] = "landmark_data {}";
 
-template <typename T>
-T ProtoFromStringOrDie(const std::string& proto_string) {
-  T msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto_string, &msg));
-  return msg;
-}
-
 class ProtoStreamDeserializerTest : public ::testing::Test {
  protected:
-  void InitializeProtoReader(
-      const std::string& header_textpb,
-      const std::initializer_list<std::string>& data_textpbs) {
-    std::queue<std::unique_ptr<Message>> proto_queue;
-    proto_queue.emplace(make_unique<SerializationHeader>(
-        ProtoFromStringOrDie<SerializationHeader>(header_textpb)));
-    for (const std::string& data_textpb : data_textpbs) {
-      proto_queue.emplace(make_unique<SerializedData>(
-          ProtoFromStringOrDie<SerializedData>(data_textpb)));
-    }
-    reader_ = make_unique<InMemoryProtoStreamReader>(std::move(proto_queue));
-  }
-
   std::unique_ptr<InMemoryProtoStreamReader> reader_;
 };
 
 // This test checks if the serialization works.
 TEST_F(ProtoStreamDeserializerTest, WorksOnGoldenTextStream) {
   // Load text proto into in_memory_reader.
-  InitializeProtoReader(kSerializationHeaderProtoString,
-                        {
-                            kPoseGraphProtoString,
-                            kAllTrajectoryBuilderOptionsProtoString,
-                            kSubmapProtoString,
-                            kNodeProtoString,
-                            kTrajectoryDataProtoString,
-                            kImuDataProtoString,
-                            kOdometryDataProtoString,
-                            kFixedFramePoseDataProtoString,
-                            kLandmarkDataProtoString,
-                        });
+  reader_ = ProtoReaderFromStrings(kSerializationHeaderProtoString,
+                                   {
+                                       kPoseGraphProtoString,
+                                       kAllTrajectoryBuilderOptionsProtoString,
+                                       kSubmapProtoString,
+                                       kNodeProtoString,
+                                       kTrajectoryDataProtoString,
+                                       kImuDataProtoString,
+                                       kOdometryDataProtoString,
+                                       kFixedFramePoseDataProtoString,
+                                       kLandmarkDataProtoString,
+                                   });
 
   io::ProtoStreamDeserializer deserializer(reader_.get());
 
@@ -149,8 +132,9 @@ TEST_F(ProtoStreamDeserializerTest, WorksOnGoldenTextStream) {
 }
 
 TEST_F(ProtoStreamDeserializerTest, FailsIfVersionNotSupported) {
-  InitializeProtoReader(kUnsupportedSerializationHeaderProtoString, {});
-  EXPECT_DEATH(common::make_unique<ProtoStreamDeserializer>(reader_.get()),
+  reader_ =
+      ProtoReaderFromStrings(kUnsupportedSerializationHeaderProtoString, {});
+  EXPECT_DEATH(absl::make_unique<ProtoStreamDeserializer>(reader_.get()),
                "Unsupported serialization format");
 }
 

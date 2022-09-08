@@ -19,10 +19,10 @@
 
 #include <functional>
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
-#include "cartographer/common/optional.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/types/optional.h"
 #include "cartographer/sensor/data.h"
 
 namespace cartographer {
@@ -42,7 +42,7 @@ class CollatorInterface {
   // for each collated sensor data.
   virtual void AddTrajectory(
       int trajectory_id,
-      const std::unordered_set<std::string>& expected_sensor_ids,
+      const absl::flat_hash_set<std::string>& expected_sensor_ids,
       const Callback& callback) = 0;
 
   // Marks 'trajectory_id' as finished.
@@ -61,7 +61,7 @@ class CollatorInterface {
   // the ID of the trajectory that needs more data before CollatorInterface is
   // unblocked. Returns 'nullopt' for implementations that do not wait for a
   // particular trajectory.
-  virtual common::optional<int> GetBlockingTrajectoryId() const = 0;
+  virtual absl::optional<int> GetBlockingTrajectoryId() const = 0;
 };
 
 }  // namespace sensor

@@ -28,16 +28,17 @@ namespace scan_matching {
 
 class RotationalScanMatcher {
  public:
+  // Rotates the given 'histogram' by the given 'angle'. This might lead to
+  // rotations of a fractional bucket which is handled by linearly
+  // interpolating.
+  static Eigen::VectorXf RotateHistogram(const Eigen::VectorXf& histogram,
+                                         float angle);
+
   // Computes the histogram for a gravity aligned 'point_cloud'.
   static Eigen::VectorXf ComputeHistogram(const sensor::PointCloud& point_cloud,
                                           int histogram_size);
 
-  // Creates a matcher from the given histograms rotated by the given angles.
-  // The angles should be chosen to bring the histograms into approximately the
-  // same frame.
-  explicit RotationalScanMatcher(
-      const std::vector<std::pair<Eigen::VectorXf, float>>&
-          histograms_at_angles);
+  explicit RotationalScanMatcher(const Eigen::VectorXf* histogram);
 
   // Scores how well 'histogram' rotated by 'initial_angle' can be understood as
   // further rotated by certain 'angles' relative to the 'nodes'. Each angle
@@ -47,7 +48,7 @@ class RotationalScanMatcher {
                            const std::vector<float>& angles) const;
 
  private:
-  Eigen::VectorXf histogram_;
+  const Eigen::VectorXf* histogram_;
 };
 
 }  // namespace scan_matching

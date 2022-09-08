@@ -19,7 +19,7 @@
 #include <random>
 
 #include "Eigen/Core"
-#include "cartographer/common/lua_parameter_dictionary_test_helpers.h"
+#include "cartographer/common/internal/testing/lua_parameter_dictionary_test_helpers.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/internal/optimization/optimization_problem_options.h"
 #include "cartographer/transform/transform.h"
@@ -39,8 +39,8 @@ class OptimizationProblem3DTest : public ::testing::Test {
   optimization::proto::OptimizationProblemOptions CreateOptions() {
     auto parameter_dictionary = common::MakeDictionary(R"text(
         return {
-          acceleration_weight = 1e-4,
-          rotation_weight = 1e-2,
+          acceleration_weight = 2e-5,
+          rotation_weight = 1e-3,
           huber_scale = 1.,
           local_slam_pose_translation_weight = 1e-2,
           local_slam_pose_rotation_weight = 1e-2,
@@ -48,7 +48,12 @@ class OptimizationProblem3DTest : public ::testing::Test {
           odometry_rotation_weight = 1e-2,
           fixed_frame_pose_translation_weight = 1e1,
           fixed_frame_pose_rotation_weight = 1e2,
+          fixed_frame_pose_use_tolerant_loss = false,
+          fixed_frame_pose_tolerant_loss_param_a = 1,
+          fixed_frame_pose_tolerant_loss_param_b = 1,
           log_solver_summary = true,
+          use_online_imu_extrinsics_in_3d = true,
+          fix_z_in_3d = false,
           ceres_solver_options = {
             use_nonmonotonic_steps = false,
             max_num_iterations = 200,
@@ -129,7 +134,7 @@ TEST_F(OptimizationProblem3DTest, ReducesNoise) {
                                        Eigen::Vector3d::Zero()});
     optimization_problem_.AddTrajectoryNode(kTrajectoryId,
                                             NodeSpec3D{now, pose, pose});
-    now += common::FromSeconds(0.01);
+    now += common::FromSeconds(0.1);
   }
 
   std::vector<OptimizationProblem3D::Constraint> constraints;
@@ -171,8 +176,9 @@ TEST_F(OptimizationProblem3DTest, ReducesNoise) {
   optimization_problem_.AddSubmap(kTrajectoryId, kSubmap0Transform);
   optimization_problem_.AddSubmap(kTrajectoryId, kSubmap0Transform);
   optimization_problem_.AddSubmap(kTrajectoryId, kSubmap2Transform);
-  const std::set<int> kFrozen = {};
-  optimization_problem_.Solve(constraints, kFrozen, {});
+  const std::map<int, PoseGraphInterface::TrajectoryState> kTrajectoriesState =
+      {{kTrajectoryId, PoseGraphInterface::TrajectoryState::ACTIVE}};
+  optimization_problem_.Solve(constraints, kTrajectoriesState, {});
 
   double translation_error_after = 0.;
   double rotation_error_after = 0.;

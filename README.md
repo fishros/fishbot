@@ -4,7 +4,9 @@
  * @QQ交流群: 2642868461
  * @描述: README
 -->
-# 基于ROS2实现的Fishbot机器人仿真及实体机器人
+# 基于ROS2实现的Fishbot机器人
+
+此代码包含仿真及真机两部分，humble分支为仿真部分代码，使用方法见：https://fishros.com/d2lros2/
 
 
 ## 1.介绍
@@ -16,7 +18,7 @@
 
 
 ```
-git clone https://github.com/fishros/fishbot.git
+git clone https://github.com/fishros/fishbot.git -b humble
 cd fishbot
 rosdep install --from-paths src -y
 colcon build
@@ -36,6 +38,14 @@ ros2 launch fishbot_description display_rviz2.launch.py
 source install/setup.bash
 ros2 launch fishbot_description gazebo.launch.py
 ```
+
+#### 建图
+
+```
+source install/setup.bash
+ros2 launch fishbot_cartographer cartographer.launch.py
+```
+
 
 #### Nav2
 ```

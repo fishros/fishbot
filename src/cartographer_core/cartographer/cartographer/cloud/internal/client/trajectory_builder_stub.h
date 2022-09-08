@@ -26,7 +26,7 @@
 #include "cartographer/cloud/internal/handlers/add_odometry_data_handler.h"
 #include "cartographer/cloud/internal/handlers/add_rangefinder_data_handler.h"
 #include "cartographer/cloud/internal/handlers/receive_local_slam_results_handler.h"
-#include "cartographer/mapping/local_slam_result_data.h"
+#include "cartographer/mapping/internal/local_slam_result_data.h"
 #include "cartographer/mapping/trajectory_builder_interface.h"
 #include "grpc++/grpc++.h"
 #include "pose_graph_stub.h"
@@ -38,7 +38,7 @@ namespace cloud {
 class TrajectoryBuilderStub : public mapping::TrajectoryBuilderInterface {
  public:
   TrajectoryBuilderStub(std::shared_ptr<::grpc::Channel> client_channel,
-                        const int trajectory_id,
+                        const int trajectory_id, const std::string& client_id,
                         LocalSlamResultCallback local_slam_result_callback);
   ~TrajectoryBuilderStub() override;
   TrajectoryBuilderStub(const TrajectoryBuilderStub&) = delete;
@@ -67,6 +67,7 @@ class TrajectoryBuilderStub : public mapping::TrajectoryBuilderInterface {
 
   std::shared_ptr<::grpc::Channel> client_channel_;
   const int trajectory_id_;
+  const std::string client_id_;
   std::unique_ptr<async_grpc::Client<handlers::AddRangefinderDataSignature>>
       add_rangefinder_client_;
   std::unique_ptr<async_grpc::Client<handlers::AddImuDataSignature>>

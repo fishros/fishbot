@@ -18,7 +18,7 @@
 
 #include <algorithm>
 
-#include "cartographer/common/make_unique.h"
+#include "absl/memory/memory.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
 
@@ -35,11 +35,11 @@ PoseExtrapolator::PoseExtrapolator(const common::Duration pose_queue_duration,
 std::unique_ptr<PoseExtrapolator> PoseExtrapolator::InitializeWithImu(
     const common::Duration pose_queue_duration,
     const double imu_gravity_time_constant, const sensor::ImuData& imu_data) {
-  auto extrapolator = common::make_unique<PoseExtrapolator>(
+  auto extrapolator = absl::make_unique<PoseExtrapolator>(
       pose_queue_duration, imu_gravity_time_constant);
   extrapolator->AddImuData(imu_data);
   extrapolator->imu_tracker_ =
-      common::make_unique<ImuTracker>(imu_gravity_time_constant, imu_data.time);
+      absl::make_unique<ImuTracker>(imu_gravity_time_constant, imu_data.time);
   extrapolator->imu_tracker_->AddImuLinearAccelerationObservation(
       imu_data.linear_acceleration);
   extrapolator->imu_tracker_->AddImuAngularVelocityObservation(
@@ -73,7 +73,7 @@ void PoseExtrapolator::AddPose(const common::Time time,
       tracker_start = std::min(tracker_start, imu_data_.front().time);
     }
     imu_tracker_ =
-        common::make_unique<ImuTracker>(gravity_time_constant_, tracker_start);
+        absl::make_unique<ImuTracker>(gravity_time_constant_, tracker_start);
   }
   timed_pose_queue_.push_back(TimedPose{time, pose});
   while (timed_pose_queue_.size() > 2 &&
@@ -84,8 +84,8 @@ void PoseExtrapolator::AddPose(const common::Time time,
   AdvanceImuTracker(time, imu_tracker_.get());
   TrimImuData();
   TrimOdometryData();
-  odometry_imu_tracker_ = common::make_unique<ImuTracker>(*imu_tracker_);
-  extrapolation_imu_tracker_ = common::make_unique<ImuTracker>(*imu_tracker_);
+  odometry_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
+  extrapolation_imu_tracker_ = absl::make_unique<ImuTracker>(*imu_tracker_);
 }
 
 void PoseExtrapolator::AddImuData(const sensor::ImuData& imu_data) {
@@ -164,9 +164,9 @@ void PoseExtrapolator::UpdateVelocitiesFromPoses() {
   const TimedPose& oldest_timed_pose = timed_pose_queue_.front();
   const auto oldest_time = oldest_timed_pose.time;
   const double queue_delta = common::ToSeconds(newest_time - oldest_time);
-  if (queue_delta < 0.001) {  // 1 ms
+  if (queue_delta < common::ToSeconds(pose_queue_duration_)) {
     LOG(WARNING) << "Queue too short for velocity estimation. Queue duration: "
-                 << queue_delta << " ms";
+                 << queue_delta << " s";
     return;
   }
   const transform::Rigid3d& newest_pose = newest_timed_pose.pose;
@@ -240,6 +240,22 @@ Eigen::Vector3d PoseExtrapolator::ExtrapolateTranslation(common::Time time) {
     return extrapolation_delta * linear_velocity_from_poses_;
   }
   return extrapolation_delta * linear_velocity_from_odometry_;
+}
+
+PoseExtrapolator::ExtrapolationResult
+PoseExtrapolator::ExtrapolatePosesWithGravity(
+    const std::vector<common::Time>& times) {
+  std::vector<transform::Rigid3f> poses;
+  for (auto it = times.begin(); it != std::prev(times.end()); ++it) {
+    poses.push_back(ExtrapolatePose(*it).cast<float>());
+  }
+
+  const Eigen::Vector3d current_velocity = odometry_data_.size() < 2
+                                               ? linear_velocity_from_poses_
+                                               : linear_velocity_from_odometry_;
+  return ExtrapolationResult{poses, ExtrapolatePose(times.back()),
+                             current_velocity,
+                             EstimateGravityOrientation(times.back())};
 }
 
 }  // namespace mapping

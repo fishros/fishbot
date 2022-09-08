@@ -47,8 +47,12 @@ class MockMapBuilder : public mapping::MapBuilderInterface {
   MOCK_METHOD2(SubmapToProto,
                std::string(const mapping::SubmapId &,
                            mapping::proto::SubmapQuery::Response *));
-  MOCK_METHOD1(SerializeState, void(io::ProtoStreamWriterInterface *));
-  MOCK_METHOD2(LoadState, void(io::ProtoStreamReaderInterface *, bool));
+  MOCK_METHOD2(SerializeState, void(bool, io::ProtoStreamWriterInterface *));
+  MOCK_METHOD2(SerializeStateToFile, bool(bool, const std::string &));
+  MOCK_METHOD2(LoadState,
+               std::map<int, int>(io::ProtoStreamReaderInterface *, bool));
+  MOCK_METHOD2(LoadStateFromFile,
+               std::map<int, int>(const std::string &, bool));
   MOCK_CONST_METHOD0(num_trajectory_builders, int());
   MOCK_METHOD0(pose_graph, mapping::PoseGraphInterface *());
   MOCK_CONST_METHOD0(
