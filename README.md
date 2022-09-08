@@ -4,6 +4,8 @@
  * @QQ交流群: 2642868461
  * @描述: README
 -->
+## 注意当前分支代码为humble版本，如需foxy版本请在左上角切换分支
+
 # 基于ROS2实现的Fishbot机器人
 
 此代码包含仿真及真机两部分，humble分支为仿真部分代码，使用方法见：https://fishros.com/d2lros2/
