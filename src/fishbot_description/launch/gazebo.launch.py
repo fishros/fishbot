@@ -17,10 +17,13 @@ def generate_launch_description():
     gazebo_world_path = os.path.join(pkg_share, 'world/fishbot.world')
 
     # Start Gazebo server
+    # start_gazebo_cmd = ExecuteProcess(
+    #     cmd=['gazebo', '--verbose','-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', gazebo_world_path],
+    #     output='screen')
     start_gazebo_cmd = ExecuteProcess(
         cmd=['gazebo', '--verbose','-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', gazebo_world_path],
         output='screen')
-
+        
     # Launch the robot
     spawn_entity_cmd = Node(
         package='gazebo_ros', 

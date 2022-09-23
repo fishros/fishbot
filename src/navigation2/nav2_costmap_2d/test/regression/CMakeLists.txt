@@ -1,4 +1,0 @@
-ament_add_gtest(costmap_bresenham_2d costmap_bresenham_2d.cpp)
-target_link_libraries(costmap_bresenham_2d
-  nav2_costmap_2d_core
-)

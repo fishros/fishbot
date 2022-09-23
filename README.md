@@ -22,7 +22,7 @@
 
 
 ```
-git clone https://github.com/fishros/fishbot.git -b humble
+git clone --recursive https://github.com/fishros/fishbot.git -b humble
 cd fishbot
 rosdep install --from-paths src -y
 colcon build
@@ -57,6 +57,8 @@ source install/setup.bash
 ros2 launch fishbot_navigation2 navigation2.launch.py use_sim_time:=True
 ```
 
+
+<!-- submodule https://github.91chi.fun/https://github.com/ros-planning/navigation2.git -->
 
 ## 作者
 - [鱼香ROS](https://fishros.com)-小鱼

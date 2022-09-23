@@ -1,0 +1,3 @@
+[submodule "src/navigation"]
+	path = src/navigation
+	url = https://github.91chi.fun/https://github.com/ros-planning/navigation2.git
