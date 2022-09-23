@@ -1,3 +1,10 @@
 [submodule "src/navigation"]
 	path = src/navigation
 	url = https://github.91chi.fun/https://github.com/ros-planning/navigation2.git
+	branch = main
+[submodule "src/cartographer_code/cartographer"]
+	path = src/cartographer_code/cartographer
+	url = https://github.91chi.fun/https://github.com/ros2/cartographer.git
+[submodule "src/cartographer_code/cartographer_ros"]
+	path = src/cartographer_code/cartographer_ros
+	url = https://github.91chi.fun/https://github.com/ros2/cartographer_ros.git

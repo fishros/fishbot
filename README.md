@@ -64,3 +64,14 @@ ros2 launch fishbot_navigation2 navigation2.launch.py use_sim_time:=True
 - [鱼香ROS](https://fishros.com)-小鱼
 
 欢迎大家关注公众号鱼香ROS,加入技术交流群
+
+
+错误
+```
+None of the required 'cairo>=1.12.16' found
+```
+
+解决方法
+```
+export PKG_CONFIG_PATH="/usr/share/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+```

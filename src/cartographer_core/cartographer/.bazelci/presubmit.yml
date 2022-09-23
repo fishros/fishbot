@@ -1,7 +1,0 @@
----
-platforms:
-  ubuntu1604:
-    build_targets:
-    - "..."
-    test_targets:
-    - "..."
