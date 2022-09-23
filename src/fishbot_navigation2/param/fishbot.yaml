@@ -30,7 +30,7 @@ amcl:
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
-    transform_tolerance: 10.0
+    transform_tolerance: 1.0
     update_min_a: 0.2
     update_min_d: 0.25
     z_hit: 0.5
@@ -196,11 +196,25 @@ local_costmap:
       height: 3
       resolution: 0.05
       robot_radius: 0.22
-      plugins: ["voxel_layer", "inflation_layer"]
+      plugins: ["static_layer", "obstacle_layer", "voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.55
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -222,6 +236,7 @@ local_costmap:
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
       static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
       always_send_full_costmap: True
   local_costmap_client:
