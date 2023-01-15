@@ -20,8 +20,8 @@ def generate_launch_description():
     fishbot_navigation2_dir = get_package_share_directory('fishbot_navigation2')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    map_yaml_path = LaunchConfiguration('map',default=os.path.join(fishbot_navigation2_dir,'maps','fishbot_map.yaml'))
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    map_yaml_path = LaunchConfiguration('map',default=os.path.join(fishbot_navigation2_dir,'maps','fishbot_workspace_map1.yaml'))
     nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(fishbot_navigation2_dir,'param','fishbot.yaml'))
 
     rviz_config_dir = os.path.join(nav2_bringup_dir,'rviz','nav2_default_view.rviz')
