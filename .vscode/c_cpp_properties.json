@@ -3,8 +3,12 @@
         {
             "name": "Linux",
             "includePath": [
+<<<<<<< Updated upstream
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**"
+=======
+                "${workspaceFolder}/**"
+>>>>>>> Stashed changes
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

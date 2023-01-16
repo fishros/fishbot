@@ -75,6 +75,11 @@
         "thread": "cpp",
         "cfenv": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "*.ipp": "cpp"
     }
 }
