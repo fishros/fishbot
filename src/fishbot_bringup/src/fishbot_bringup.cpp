@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
   /*产生一个的节点*/
-  auto node = std::make_shared<TopicSubscribe01>("topic_subscribe_01");
+  auto node = std::make_shared<TopicSubscribe01>("fishbot_bringup");
   /* 运行节点，并检测退出信号*/
   rclcpp::WallRate loop_rate(1000.0);
   while (rclcpp::ok())
