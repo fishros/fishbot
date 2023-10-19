@@ -38,7 +38,7 @@ public:
   void publish_tf()
   {
     geometry_msgs::msg::TransformStamped transform;
-    double seconds = this->now().seconds() + 1.0;
+    double seconds = this->now().seconds();
     transform.header.stamp = rclcpp::Time(static_cast<uint64_t>(seconds * 1e9));
     transform.header.frame_id = "odom";
     transform.child_frame_id = "base_footprint";
