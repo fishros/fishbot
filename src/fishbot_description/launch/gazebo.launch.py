@@ -10,11 +10,13 @@ def generate_launch_description():
     robot_name_in_model = 'fishbot'
     package_name = 'fishbot_description'
     urdf_name = "fishbot_gazebo.urdf"
+    rviz_config_name = "gazebo_config.rviz"
 
     ld = LaunchDescription()
     pkg_share = FindPackageShare(package=package_name).find(package_name) 
     urdf_model_path = os.path.join(pkg_share, f'urdf/{urdf_name}')
     gazebo_world_path = os.path.join(pkg_share, 'world/fishbot.world')
+    default_rviz_config_path = os.path.join(pkg_share, f'rviz/{rviz_config_name}')
 
     # Start Gazebo server
     start_gazebo_cmd = ExecuteProcess(
@@ -40,7 +42,7 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        # arguments=['-d', default_rviz_config_path]
+        arguments=['-d', default_rviz_config_path]
         )
 
     ld.add_action(start_gazebo_cmd)
